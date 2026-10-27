@@ -1,0 +1,20 @@
+{
+  "name": "pagesense-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "test:banglish": "node tests/01-banglish.js",
+    "test:graph": "node tests/02-graph.js",
+    "test:sam": "node tests/03-sam.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "openai": "^4.77.0"
+  },
+  "engines": { "node": ">=20" }
+}
