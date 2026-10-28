@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import authRoutes from './routes/auth.js';
 import pageRoutes from './routes/pages.js';
+import { failInterruptedJobs } from './analysis.js';
 
 const app = express();
 app.use(cors());
@@ -14,6 +15,8 @@ app.use('/pages', pageRoutes);
 app.get('/health', (_req, res) => {
   res.json({ ok: true, service: 'pagesense-backend', time: new Date().toISOString() });
 });
+
+failInterruptedJobs();
 
 const port = process.env.PORT || 4000;
 app.listen(port, () => console.log(`PageSense backend running on :${port}`));

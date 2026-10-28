@@ -1,5 +1,6 @@
 import { db } from './db.js';
 import { graph, paginate } from './facebook.js';
+import { startAnalysis } from './analysis.js';
 
 // Score weights: shares and comments say more about buying intent than a reaction.
 export const engagementScore = ({ reactions, comments_count, shares }) =>
@@ -94,7 +95,11 @@ export async function startSync(pageId, days) {
   const job = { status: 'running', days: days || null, posts: 0, comments: 0, commentsExpected: 0, updatedAt: Date.now(), startedAt: new Date().toISOString() };
   jobs.set(pageId, job);
   run(pageId, page.access_token, job)
-    .then(() => { job.status = 'done'; })
+    .then(async () => {
+      job.status = 'done';
+      // analysis follows every successful sync; its failure must not mark the sync failed
+      await startAnalysis(pageId).catch((e) => console.error('could not start analysis:', e.message));
+    })
     .catch((e) => { console.error('sync failed', pageId, e.message); job.status = 'error'; job.error = e.message; })
     .finally(() => { job.finishedAt = new Date().toISOString(); });
   return job;

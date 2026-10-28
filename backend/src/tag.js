@@ -102,6 +102,7 @@ async function run(pageId, limit, state) {
   let todo = await untaggedPosts(pageId);
   if (limit) todo = todo.slice(0, limit);
   state.total = todo.length;
+  await state.onProgress?.(0, todo.length);
 
   for (let i = 0; i < todo.length; i += BATCH_SIZE) {
     const batch = todo.slice(i, i + BATCH_SIZE);
@@ -116,7 +117,15 @@ async function run(pageId, limit, state) {
       }
     }
     state.processed = Math.min(i + BATCH_SIZE, todo.length);
+    await state.onProgress?.(state.processed, todo.length);
   }
+}
+
+// Used by the analysis pipeline: tags every untagged photo post and reports progress.
+export async function tagPage(pageId, { progress } = {}) {
+  const state = { total: 0, processed: 0, tagged: 0, failed: 0, onProgress: progress };
+  await run(pageId, 0, state);
+  return { tagged: state.tagged, failed: state.failed };
 }
 
 // Starts a background tagging run; already-tagged posts are skipped. One run per page at a time.

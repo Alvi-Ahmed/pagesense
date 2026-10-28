@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { listUserPages } from '../facebook.js';
 import { startSync, getSyncStatus } from '../sync.js';
 import { startTagging, getTagStatus } from '../tag.js';
+import { startAnalysis, latestAnalysis } from '../analysis.js';
 
 const router = Router();
 
@@ -39,5 +40,16 @@ router.get('/:id/sync', (req, res) => res.json(getSyncStatus(req.params.id)));
 // Optional body.limit tags only the first N untagged posts (handy for a cheap trial run).
 router.post('/:id/tag', requireManager, handle((req) => startTagging(req.params.id, Number(req.body.limit) || 0)));
 router.get('/:id/tag', (req, res) => res.json(getTagStatus(req.params.id)));
+
+// Analysis runs automatically after a sync; POST is the Retry button.
+router.post('/:id/analysis', requireManager, handle((req) => startAnalysis(req.params.id)));
+router.get('/:id/analysis', async (req, res) => {
+  try {
+    res.json(await latestAnalysis(req.params.id));
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 export default router;
