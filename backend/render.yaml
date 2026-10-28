@@ -16,5 +16,13 @@ services:
         sync: false
       - key: FB_PAGE_TOKEN
         sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: FB_APP_ID
+        sync: false
+      - key: FB_APP_SECRET
+        sync: false
       - key: FB_GRAPH_VERSION
         value: v26.0
