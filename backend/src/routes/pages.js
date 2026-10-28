@@ -29,7 +29,11 @@ const handle = (fn) => async (req, res) => {
   }
 };
 
-router.post('/:id/sync', requireManager, handle((req) => startSync(req.params.id)));
+router.post('/:id/sync', requireManager, handle((req) => {
+  const days = Number(req.body.days) || 0
+  if (days < 0 || days > 3650) throw Object.assign(new Error('days must be between 1 and 3650'), { status: 400 })
+  return startSync(req.params.id, Math.floor(days))
+}));
 router.get('/:id/sync', (req, res) => res.json(getSyncStatus(req.params.id)));
 
 // Optional body.limit tags only the first N untagged posts (handy for a cheap trial run).

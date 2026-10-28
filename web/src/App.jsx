@@ -26,7 +26,16 @@ const saveSession = (s) => {
   try { s ? sessionStorage.setItem('pagesense.session', JSON.stringify(s)) : sessionStorage.removeItem('pagesense.session') } catch { /* storage unavailable */ }
 }
 
-function SyncWidget({ page, token }) {
+const RANGES = [
+  { days: 30, label: 'Last 30 days' },
+  { days: 90, label: 'Last 3 months', hint: 'Recommended' },
+  { days: 180, label: 'Last 6 months' },
+  { days: 365, label: 'Last year' },
+  { days: 0, label: 'Everything', hint: 'Slow on older pages' },
+]
+const rangeLabel = (days) => RANGES.find((r) => r.days === (days || 0))?.label ?? `Last ${days} days`
+
+function SyncWidget({ page, token, days }) {
   const [job, setJob] = useState(null)
   const [error, setError] = useState(null)
   const [open, setOpen] = useState(false)
@@ -38,14 +47,14 @@ function SyncWidget({ page, token }) {
     ;(async () => {
       try {
         let j = await get(`/pages/${page.id}/sync`)
-        if (j.status === 'idle' && token) j = await post(`/pages/${page.id}/sync`, { accessToken: token })
+        if (j.status === 'idle' && token) j = await post(`/pages/${page.id}/sync`, { accessToken: token, days })
         if (!cancelled) setJob(j)
       } catch (e) {
         if (!cancelled) setError(e.message)
       }
     })()
     return () => { cancelled = true }
-  }, [page.id, token])
+  }, [page.id, token, days])
 
   // Poll while running.
   useEffect(() => {
@@ -58,7 +67,7 @@ function SyncWidget({ page, token }) {
 
   const retry = async () => {
     setError(null)
-    try { setJob(await post(`/pages/${page.id}/sync`, { accessToken: token })) } catch (e) { setError(e.message) }
+    try { setJob(await post(`/pages/${page.id}/sync`, { accessToken: token, days })) } catch (e) { setError(e.message) }
   }
 
   const failed = status === 'error' || error
@@ -73,6 +82,7 @@ function SyncWidget({ page, token }) {
       </button>
       {open && (
         <div className="flex flex-col gap-2 border-t border-slate-200 px-3 py-2 text-slate-600">
+          {job && <p className="text-xs">{rangeLabel(job.days)}</p>}
           {job && <p>{job.posts} posts, {job.comments}{job.commentsExpected > 0 && ` / ~${job.commentsExpected}`} comments</p>}
           {status === 'running' && <p className="text-xs">This runs on the server. Keep using the app.</p>}
           {failed && <p className="text-red-700">{error || job.error}</p>}
@@ -94,7 +104,7 @@ function Dashboard({ session, onDisconnect }) {
       <button onClick={onDisconnect} className="self-start text-sm text-slate-500 underline">
         Disconnect page
       </button>
-      <SyncWidget page={session.page} token={session.token} />
+      <SyncWidget page={session.page} token={session.token} days={session.days} />
     </main>
   )
 }
@@ -102,6 +112,8 @@ function Dashboard({ session, onDisconnect }) {
 function Connect({ onConnected }) {
   const [token, setToken] = useState(null)
   const [pages, setPages] = useState(null)
+  const [picked, setPicked] = useState(null)
+  const [days, setDays] = useState(90)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
 
@@ -118,19 +130,40 @@ function Connect({ onConnected }) {
     setPages(pages)
   })
 
-  const choose = (pageId) => run(async () => {
-    const { page } = await post('/auth/select-page', { accessToken: token, pageId })
-    onConnected({ page, token })
+  const confirm = () => run(async () => {
+    const { page } = await post('/auth/select-page', { accessToken: token, pageId: picked.id })
+    onConnected({ page, token, days })
   })
 
   return (
     <section className="flex flex-col gap-3">
-      {pages ? (
+      {picked ? (
+        <>
+          <p className="font-medium">How far back should we learn from {picked.name}?</p>
+          <p className="text-sm text-slate-600">
+            Older history takes longer and costs more. You can sync more later.
+          </p>
+          {RANGES.map((r) => (
+            <label key={r.days} className={`flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 ${days === r.days ? 'border-blue-600 bg-blue-50' : 'border-slate-300'}`}>
+              <input type="radio" name="range" checked={days === r.days} onChange={() => setDays(r.days)} />
+              <span className="flex-1">{r.label}</span>
+              {r.hint && <span className="text-xs text-slate-500">{r.hint}</span>}
+            </label>
+          ))}
+          <button disabled={busy} onClick={confirm}
+            className="rounded-lg bg-blue-600 px-4 py-3 font-medium text-white disabled:opacity-50">
+            {busy ? 'Working…' : 'Start'}
+          </button>
+          <button disabled={busy} onClick={() => setPicked(null)} className="text-sm text-slate-500 underline">
+            Choose a different page
+          </button>
+        </>
+      ) : pages ? (
         <>
           <p className="font-medium">Choose a page</p>
           {pages.length === 0 && <p className="text-slate-600">No pages found on this account.</p>}
           {pages.map((p) => (
-            <button key={p.id} disabled={busy} onClick={() => choose(p.id)}
+            <button key={p.id} disabled={busy} onClick={() => setPicked(p)}
               className="rounded-lg border border-slate-300 px-4 py-3 text-left disabled:opacity-50">
               {p.name}
             </button>

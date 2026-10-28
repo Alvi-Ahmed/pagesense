@@ -61,6 +61,8 @@ async function run(pageId, token, job) {
     access_token: token,
     fields: POST_FIELDS,
     limit: '50',
+    // Graph stops paging once posts get older than `since`; omitted = full history
+    ...(job.days && { since: String(Math.floor(Date.now() / 1000) - job.days * 86400) }),
   })) {
     const rows = batch.map((p) => toPostRow(pageId, p));
     await upsert('posts', rows);
@@ -77,7 +79,8 @@ async function run(pageId, token, job) {
 }
 
 // Starts a background sync and returns immediately. One sync per page at a time.
-export async function startSync(pageId) {
+// `days` limits history to the last N days (cheaper); falsy syncs everything.
+export async function startSync(pageId, days) {
   if (jobs.get(pageId)?.status === 'running') return jobs.get(pageId);
 
   const { data: page, error } = await db.from('pages').select('access_token').eq('id', pageId).maybeSingle();
@@ -88,7 +91,7 @@ export async function startSync(pageId) {
     throw err;
   }
 
-  const job = { status: 'running', posts: 0, comments: 0, commentsExpected: 0, updatedAt: Date.now(), startedAt: new Date().toISOString() };
+  const job = { status: 'running', days: days || null, posts: 0, comments: 0, commentsExpected: 0, updatedAt: Date.now(), startedAt: new Date().toISOString() };
   jobs.set(pageId, job);
   run(pageId, page.access_token, job)
     .then(() => { job.status = 'done'; })
