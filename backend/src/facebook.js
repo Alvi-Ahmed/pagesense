@@ -6,7 +6,7 @@ const GRAPH = `https://graph.facebook.com/${process.env.FB_GRAPH_VERSION || 'v26
 export async function graph(path, params = {}) {
   const url = path.startsWith('http') ? path : `${GRAPH}${path}?${new URLSearchParams(params)}`;
   for (let attempt = 1; ; attempt++) {
-    const res = await fetch(url);
+    const res = await fetch(url, { signal: AbortSignal.timeout(30_000) }); // never hang on a stalled call
     const body = await res.json();
     if (res.ok && !body.error) return body;
     const transient = res.status >= 500 || [1, 2, 4, 17, 32, 613].includes(body.error?.code);

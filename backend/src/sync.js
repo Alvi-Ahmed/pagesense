@@ -5,6 +5,8 @@ import { graph, paginate } from './facebook.js';
 export const engagementScore = ({ reactions, comments_count, shares }) =>
   reactions + 2 * comments_count + 3 * shares;
 
+const COMMENT_CONCURRENCY = 5; // posts whose comments are fetched at the same time
+
 const POST_FIELDS = [
   'id', 'message', 'created_time', 'full_picture', 'shares',
   'reactions.summary(total_count).limit(0)',
@@ -50,6 +52,7 @@ async function syncComments(postId, token, job) {
       id: c.id, post_id: postId, message: c.message ?? null, created_time: c.created_time,
     })));
     job.comments += batch.length;
+    job.updatedAt = Date.now();
   }
 }
 
@@ -62,9 +65,14 @@ async function run(pageId, token, job) {
     const rows = batch.map((p) => toPostRow(pageId, p));
     await upsert('posts', rows);
     job.posts += rows.length;
-    for (const row of rows) {
-      if (row.comments_count > 0) await syncComments(row.id, token, job);
-    }
+    job.updatedAt = Date.now();
+
+    const queue = rows.filter((r) => r.comments_count > 0);
+    job.commentsExpected += queue.reduce((n, r) => n + r.comments_count, 0);
+    // Small worker pool: comment paging is the slow part and posts are independent.
+    await Promise.all(Array.from({ length: COMMENT_CONCURRENCY }, async () => {
+      for (let row; (row = queue.shift());) await syncComments(row.id, token, job);
+    }));
   }
 }
 
@@ -80,7 +88,7 @@ export async function startSync(pageId) {
     throw err;
   }
 
-  const job = { status: 'running', posts: 0, comments: 0, startedAt: new Date().toISOString() };
+  const job = { status: 'running', posts: 0, comments: 0, commentsExpected: 0, updatedAt: Date.now(), startedAt: new Date().toISOString() };
   jobs.set(pageId, job);
   run(pageId, page.access_token, job)
     .then(() => { job.status = 'done'; })

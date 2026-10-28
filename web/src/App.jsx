@@ -62,13 +62,19 @@ function Sync({ page, token }) {
         {running ? 'Syncing…' : job?.status === 'done' ? 'Sync again' : 'Sync page data'}
       </button>
       {running && (
-        <div className="h-2 overflow-hidden rounded bg-slate-200">
-          <div className="h-full w-1/3 animate-pulse rounded bg-blue-600" />
-        </div>
+        <>
+          <div className="h-2 overflow-hidden rounded bg-slate-200">
+            <div className="h-full w-1/3 animate-pulse rounded bg-blue-600" />
+          </div>
+          <p className="text-xs text-slate-500">
+            Running on the server. Keep this page open so the free host stays awake.
+          </p>
+        </>
       )}
       {job && job.status !== 'idle' && (
         <p className="text-sm text-slate-600">
-          {job.posts} posts, {job.comments} comments
+          {job.posts} posts, {job.comments}
+          {job.commentsExpected > 0 && ` / ~${job.commentsExpected}`} comments
           {job.status === 'done' && ' — done'}
           {job.status === 'error' && ` — failed: ${job.error}`}
         </p>
