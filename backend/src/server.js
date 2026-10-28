@@ -2,12 +2,14 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import authRoutes from './routes/auth.js';
+import pageRoutes from './routes/pages.js';
 
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
 app.use('/auth', authRoutes);
+app.use('/pages', pageRoutes);
 
 app.get('/health', (_req, res) => {
   res.json({ ok: true, service: 'pagesense-backend', time: new Date().toISOString() });

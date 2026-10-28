@@ -3,6 +3,13 @@ import { facebookLogin } from './facebook'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
+async function get(path) {
+  const res = await fetch(`${API_URL}${path}`)
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`)
+  return data
+}
+
 async function post(path, body) {
   const res = await fetch(`${API_URL}${path}`, {
     method: 'POST',
@@ -12,6 +19,59 @@ async function post(path, body) {
   const data = await res.json()
   if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`)
   return data
+}
+
+function Sync({ page, token }) {
+  const [job, setJob] = useState(null)
+  const [error, setError] = useState(null)
+  const running = job?.status === 'running'
+
+  // Poll while a sync is running (also picks up one already in progress).
+  useEffect(() => {
+    let timer
+    const tick = async () => {
+      try {
+        const j = await get(`/pages/${page.id}/sync`)
+        setJob(j)
+        if (j.status === 'running') timer = setTimeout(tick, 1500)
+      } catch (e) {
+        setError(e.message)
+      }
+    }
+    tick()
+    return () => clearTimeout(timer)
+  }, [page.id, running])
+
+  const start = async () => {
+    setError(null)
+    try {
+      setJob(await post(`/pages/${page.id}/sync`, { accessToken: token }))
+    } catch (e) {
+      setError(e.message)
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <button onClick={start} disabled={running}
+        className="rounded-lg bg-blue-600 px-4 py-3 font-medium text-white disabled:opacity-50">
+        {running ? 'Syncing…' : job?.status === 'done' ? 'Sync again' : 'Sync page data'}
+      </button>
+      {running && (
+        <div className="h-2 overflow-hidden rounded bg-slate-200">
+          <div className="h-full w-1/3 animate-pulse rounded bg-blue-600" />
+        </div>
+      )}
+      {job && job.status !== 'idle' && (
+        <p className="text-sm text-slate-600">
+          {job.posts} posts, {job.comments} comments
+          {job.status === 'done' && ' — done'}
+          {job.status === 'error' && ` — failed: ${job.error}`}
+        </p>
+      )}
+      {error && <p className="text-sm text-red-700">{error}</p>}
+    </div>
+  )
 }
 
 function Connect() {
@@ -45,7 +105,6 @@ function Connect() {
     run(async () => {
       const { page } = await post('/auth/select-page', { accessToken: token, pageId })
       setConnected(page)
-      setToken(null)
       setPages(null)
     })
 
@@ -55,9 +114,12 @@ function Connect() {
   return (
     <section className="flex flex-col gap-3">
       {connected ? (
-        <p className="rounded-lg bg-emerald-100 px-4 py-3 text-emerald-800">
-          Connected: {connected.name}
-        </p>
+        <>
+          <p className="rounded-lg bg-emerald-100 px-4 py-3 text-emerald-800">
+            Connected: {connected.name}
+          </p>
+          <Sync page={connected} token={token} />
+        </>
       ) : pages ? (
         <>
           <p className="font-medium">Choose a page</p>

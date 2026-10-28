@@ -2,15 +2,32 @@ import 'dotenv/config';
 
 const GRAPH = `https://graph.facebook.com/${process.env.FB_GRAPH_VERSION || 'v26.0'}`;
 
-async function graph(path, params) {
-  const res = await fetch(`${GRAPH}${path}?${new URLSearchParams(params)}`);
-  const body = await res.json();
-  if (!res.ok || body.error) {
+// `path` is a Graph path, or a full URL (e.g. a paging.next link, which already carries its params).
+export async function graph(path, params = {}) {
+  const url = path.startsWith('http') ? path : `${GRAPH}${path}?${new URLSearchParams(params)}`;
+  for (let attempt = 1; ; attempt++) {
+    const res = await fetch(url);
+    const body = await res.json();
+    if (res.ok && !body.error) return body;
+    const transient = res.status >= 500 || [1, 2, 4, 17, 32, 613].includes(body.error?.code);
+    if (transient && attempt < 4) {
+      await new Promise((r) => setTimeout(r, 2000 * attempt));
+      continue;
+    }
     const err = new Error(body.error?.message || `Graph API ${res.status}`);
     err.status = 400;
     throw err;
   }
-  return body;
+}
+
+// Yields each page of `data` by following paging.next until it runs out.
+export async function* paginate(path, params) {
+  let body = await graph(path, params);
+  while (true) {
+    yield body.data;
+    if (!body.paging?.next) return;
+    body = await graph(body.paging.next);
+  }
 }
 
 // Swap a short-lived user token (from the JS SDK) for a long-lived one (~60 days).
