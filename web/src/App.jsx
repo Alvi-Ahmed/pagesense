@@ -98,13 +98,14 @@ function Dashboard({ session, onDisconnect }) {
     <main className="mx-auto flex min-h-svh max-w-xl flex-col gap-4 px-4 py-10">
       <h1 className="text-3xl font-semibold tracking-tight">{session.page.name}</h1>
       <p className="text-slate-600">
-        We're learning from your posts and comments in the background. You can keep
-        going while it finishes.
+        {session.demo
+          ? 'Demo mode: a snapshot of a real seller page, with customer details removed.'
+          : "We're learning from your posts and comments in the background. You can keep going while it finishes."}
       </p>
       <button onClick={onDisconnect} className="self-start text-sm text-slate-500 underline">
         Disconnect page
       </button>
-      <SyncWidget page={session.page} token={session.token} days={session.days} />
+      {!session.demo && <SyncWidget page={session.page} token={session.token} days={session.days} />}
     </main>
   )
 }
@@ -204,6 +205,12 @@ function Landing({ onConnected }) {
         or Banglish.
       </p>
       <Connect onConnected={onConnected} />
+      <button
+        onClick={() => onConnected({ page: { id: 'demo', name: 'Demo Shop' }, token: null, demo: true })}
+        className="self-start text-sm text-slate-600 underline"
+      >
+        Try the demo without logging in
+      </button>
       <div className={`rounded-lg px-4 py-3 text-sm ${badge}`}>
         {status.state === 'loading' && 'Checking backend…'}
         {status.state === 'ok' && `Backend online (${status.data.service})`}

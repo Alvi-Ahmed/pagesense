@@ -2,12 +2,15 @@ import { Router } from 'express';
 import { listUserPages } from '../facebook.js';
 import { startSync, getSyncStatus } from '../sync.js';
 import { startTagging, getTagStatus } from '../tag.js';
+import { DEMO_PAGE_ID } from '../demo.js';
 import { startAnalysis, latestAnalysis } from '../analysis.js';
 
 const router = Router();
 
 // Caller proves they manage the page with their Facebook user token.
 const requireManager = async (req, res, next) => {
+  // Demo page: a seeded snapshot with no Facebook token, so there is nothing to protect or to call.
+  if (req.params.id === DEMO_PAGE_ID) return next();
   try {
     const { accessToken } = req.body;
     if (!accessToken) return res.status(400).json({ error: 'accessToken is required' });

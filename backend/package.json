@@ -8,7 +8,9 @@
     "start": "node src/server.js",
     "test:banglish": "node tests/01-banglish.js",
     "test:graph": "node tests/02-graph.js",
-    "test:sam": "node tests/03-sam.js"
+    "test:sam": "node tests/03-sam.js",
+    "demo:export": "node scripts/demo-export.js",
+    "demo:seed": "node scripts/demo-seed.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",

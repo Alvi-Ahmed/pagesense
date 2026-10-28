@@ -1,6 +1,7 @@
 import { db } from './db.js';
 import { graph, paginate } from './facebook.js';
 import { startAnalysis } from './analysis.js';
+import { DEMO_PAGE_ID } from './demo.js';
 
 // Score weights: shares and comments say more about buying intent than a reaction.
 export const engagementScore = ({ reactions, comments_count, shares }) =>
@@ -83,6 +84,9 @@ async function run(pageId, token, job) {
 // `days` limits history to the last N days (cheaper); falsy syncs everything.
 export async function startSync(pageId, days) {
   if (jobs.get(pageId)?.status === 'running') return jobs.get(pageId);
+  if (pageId === DEMO_PAGE_ID) {
+    throw Object.assign(new Error('The demo page is a fixed snapshot and cannot be synced'), { status: 400 });
+  }
 
   const { data: page, error } = await db.from('pages').select('access_token').eq('id', pageId).maybeSingle();
   if (error) throw error;
