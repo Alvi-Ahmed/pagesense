@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: pagesense-backend
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      # Secrets: set these in the Render dashboard (never commit values).
+      - key: MODEL_API_KEY
+        sync: false
+      - key: FB_PAGE_ID
+        sync: false
+      - key: FB_PAGE_TOKEN
+        sync: false
+      - key: FB_GRAPH_VERSION
+        value: v26.0
