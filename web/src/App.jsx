@@ -3,17 +3,8 @@ import { facebookLogin } from './facebook'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
-async function get(path) {
-  const res = await fetch(`${API_URL}${path}`)
-  const data = await res.json().catch(() => {
-    throw new Error(`Backend returned a non-JSON response (HTTP ${res.status}) from ${res.url}`)
-  })
-  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`)
-  return data
-}
-
-async function post(path, body) {
-  const res = await fetch(`${API_URL}${path}`, {
+async function request(path, body) {
+  const res = await fetch(`${API_URL}${path}`, body && {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -24,118 +15,120 @@ async function post(path, body) {
   if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`)
   return data
 }
+const get = (path) => request(path)
+const post = request
 
-function Sync({ page, token }) {
+// Keep the connected page across reloads (per tab; the token is short-lived).
+const loadSession = () => {
+  try { return JSON.parse(sessionStorage.getItem('pagesense.session')) } catch { return null }
+}
+const saveSession = (s) => {
+  try { s ? sessionStorage.setItem('pagesense.session', JSON.stringify(s)) : sessionStorage.removeItem('pagesense.session') } catch { /* storage unavailable */ }
+}
+
+function SyncWidget({ page, token }) {
   const [job, setJob] = useState(null)
   const [error, setError] = useState(null)
-  const running = job?.status === 'running'
+  const [open, setOpen] = useState(false)
+  const status = job?.status
 
-  // Poll while a sync is running (also picks up one already in progress).
+  // Start a sync if none has run yet, otherwise just attach to the one in progress.
   useEffect(() => {
-    let timer
-    const tick = async () => {
+    let cancelled = false
+    ;(async () => {
       try {
-        const j = await get(`/pages/${page.id}/sync`)
-        setJob(j)
-        if (j.status === 'running') timer = setTimeout(tick, 1500)
+        let j = await get(`/pages/${page.id}/sync`)
+        if (j.status === 'idle' && token) j = await post(`/pages/${page.id}/sync`, { accessToken: token })
+        if (!cancelled) setJob(j)
       } catch (e) {
-        setError(e.message)
+        if (!cancelled) setError(e.message)
       }
-    }
-    tick()
-    return () => clearTimeout(timer)
-  }, [page.id, running])
+    })()
+    return () => { cancelled = true }
+  }, [page.id, token])
 
-  const start = async () => {
+  // Poll while running.
+  useEffect(() => {
+    if (status !== 'running') return
+    const timer = setInterval(() => {
+      get(`/pages/${page.id}/sync`).then(setJob).catch((e) => setError(e.message))
+    }, 1500)
+    return () => clearInterval(timer)
+  }, [page.id, status])
+
+  const retry = async () => {
     setError(null)
-    try {
-      setJob(await post(`/pages/${page.id}/sync`, { accessToken: token }))
-    } catch (e) {
-      setError(e.message)
-    }
+    try { setJob(await post(`/pages/${page.id}/sync`, { accessToken: token })) } catch (e) { setError(e.message) }
   }
 
+  const failed = status === 'error' || error
+  const label = failed ? 'Sync failed' : status === 'done' ? 'Page synced' : 'Syncing your page…'
+  const dot = failed ? 'bg-red-500' : status === 'done' ? 'bg-emerald-500' : 'animate-pulse bg-blue-600'
+
   return (
-    <div className="flex flex-col gap-2">
-      <button onClick={start} disabled={running}
-        className="rounded-lg bg-blue-600 px-4 py-3 font-medium text-white disabled:opacity-50">
-        {running ? 'Syncing…' : job?.status === 'done' ? 'Sync again' : 'Sync page data'}
+    <div className="fixed right-4 bottom-4 z-10 max-w-[calc(100vw-2rem)] rounded-xl border border-slate-200 bg-white text-sm shadow-lg">
+      <button onClick={() => setOpen(!open)} className="flex w-full items-center gap-2 px-3 py-2">
+        <span className={`h-2.5 w-2.5 rounded-full ${dot}`} />
+        <span className="font-medium">{label}</span>
       </button>
-      {running && (
-        <>
-          <div className="h-2 overflow-hidden rounded bg-slate-200">
-            <div className="h-full w-1/3 animate-pulse rounded bg-blue-600" />
-          </div>
-          <p className="text-xs text-slate-500">
-            Running on the server. Keep this page open so the free host stays awake.
-          </p>
-        </>
+      {open && (
+        <div className="flex flex-col gap-2 border-t border-slate-200 px-3 py-2 text-slate-600">
+          {job && <p>{job.posts} posts, {job.comments}{job.commentsExpected > 0 && ` / ~${job.commentsExpected}`} comments</p>}
+          {status === 'running' && <p className="text-xs">This runs on the server. Keep using the app.</p>}
+          {failed && <p className="text-red-700">{error || job.error}</p>}
+          {failed && token && <button onClick={retry} className="rounded bg-blue-600 px-3 py-1.5 text-white">Try again</button>}
+        </div>
       )}
-      {job && job.status !== 'idle' && (
-        <p className="text-sm text-slate-600">
-          {job.posts} posts, {job.comments}
-          {job.commentsExpected > 0 && ` / ~${job.commentsExpected}`} comments
-          {job.status === 'done' && ' — done'}
-          {job.status === 'error' && ` — failed: ${job.error}`}
-        </p>
-      )}
-      {error && <p className="text-sm text-red-700">{error}</p>}
     </div>
   )
 }
 
-function Connect() {
+function Dashboard({ session, onDisconnect }) {
+  return (
+    <main className="mx-auto flex min-h-svh max-w-xl flex-col gap-4 px-4 py-10">
+      <h1 className="text-3xl font-semibold tracking-tight">{session.page.name}</h1>
+      <p className="text-slate-600">
+        We're learning from your posts and comments in the background. You can keep
+        going while it finishes.
+      </p>
+      <button onClick={onDisconnect} className="self-start text-sm text-slate-500 underline">
+        Disconnect page
+      </button>
+      <SyncWidget page={session.page} token={session.token} />
+    </main>
+  )
+}
+
+function Connect({ onConnected }) {
   const [token, setToken] = useState(null)
   const [pages, setPages] = useState(null)
-  const [connected, setConnected] = useState(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
 
   const run = async (fn) => {
     setBusy(true)
     setError(null)
-    try {
-      await fn()
-    } catch (e) {
-      setError(e.message)
-    } finally {
-      setBusy(false)
-    }
+    try { await fn() } catch (e) { setError(e.message) } finally { setBusy(false) }
   }
 
-  const login = () =>
-    run(async () => {
-      const accessToken = await facebookLogin()
-      const { pages } = await post('/auth/facebook', { accessToken })
-      setToken(accessToken)
-      setPages(pages)
-    })
+  const login = () => run(async () => {
+    const accessToken = await facebookLogin()
+    const { pages } = await post('/auth/facebook', { accessToken })
+    setToken(accessToken)
+    setPages(pages)
+  })
 
-  const choose = (pageId) =>
-    run(async () => {
-      const { page } = await post('/auth/select-page', { accessToken: token, pageId })
-      setConnected(page)
-      setPages(null)
-    })
-
-  const btn =
-    'rounded-lg bg-blue-600 px-4 py-3 font-medium text-white disabled:opacity-50'
+  const choose = (pageId) => run(async () => {
+    const { page } = await post('/auth/select-page', { accessToken: token, pageId })
+    onConnected({ page, token })
+  })
 
   return (
     <section className="flex flex-col gap-3">
-      {connected ? (
-        <>
-          <p className="rounded-lg bg-emerald-100 px-4 py-3 text-emerald-800">
-            Connected: {connected.name}
-          </p>
-          <Sync page={connected} token={token} />
-        </>
-      ) : pages ? (
+      {pages ? (
         <>
           <p className="font-medium">Choose a page</p>
-          {pages.length === 0 && (
-            <p className="text-slate-600">No pages found on this account.</p>
-          )}
+          {pages.length === 0 && <p className="text-slate-600">No pages found on this account.</p>}
           {pages.map((p) => (
             <button key={p.id} disabled={busy} onClick={() => choose(p.id)}
               className="rounded-lg border border-slate-300 px-4 py-3 text-left disabled:opacity-50">
@@ -144,7 +137,8 @@ function Connect() {
           ))}
         </>
       ) : (
-        <button disabled={busy} onClick={login} className={btn}>
+        <button disabled={busy} onClick={login}
+          className="rounded-lg bg-blue-600 px-4 py-3 font-medium text-white disabled:opacity-50">
           {busy ? 'Working…' : 'Continue with Facebook'}
         </button>
       )}
@@ -153,12 +147,11 @@ function Connect() {
   )
 }
 
-export default function App() {
+function Landing({ onConnected }) {
   const [status, setStatus] = useState({ state: 'loading' })
 
   useEffect(() => {
-    fetch(`${API_URL}/health`)
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+    get('/health')
       .then((data) => setStatus({ state: 'ok', data }))
       .catch((err) => setStatus({ state: 'error', message: err.message }))
   }, [])
@@ -177,7 +170,7 @@ export default function App() {
         builds your catalog, and writes posts in your voice, in Bangla, English
         or Banglish.
       </p>
-      <Connect />
+      <Connect onConnected={onConnected} />
       <div className={`rounded-lg px-4 py-3 text-sm ${badge}`}>
         {status.state === 'loading' && 'Checking backend…'}
         {status.state === 'ok' && `Backend online (${status.data.service})`}
@@ -185,4 +178,14 @@ export default function App() {
       </div>
     </main>
   )
+}
+
+export default function App() {
+  const [session, setSession] = useState(loadSession)
+
+  const update = (s) => { saveSession(s); setSession(s) }
+
+  return session
+    ? <Dashboard session={session} onDisconnect={() => update(null)} />
+    : <Landing onConnected={update} />
 }
