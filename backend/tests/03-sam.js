@@ -26,7 +26,7 @@ const res = await meta.responses.create({
   }],
 });
 
-const text = res.output_text ?? JSON.stringify(res.output);
+const text = res.output_text || JSON.stringify(res.output ?? '');
 // SAM 3.1 returns special-token text like: id<|box;x1=..;y1=..;x2=..;y2=..;w=..;h=..|><|mask;...|>
 const boxes = [...text.matchAll(/<\|box;([^|]*)\|>/g)].map(m =>
   Object.fromEntries(m[1].split(';').map(kv => kv.split('=')).map(([k, v]) => [k, Number(v)]))
@@ -34,6 +34,7 @@ const boxes = [...text.matchAll(/<\|box;([^|]*)\|>/g)].map(m =>
 
 if (!boxes.length) {
   console.log('No boxes parsed. Raw output (first 500 chars):\n', text.slice(0, 500));
+  console.log('Full response object:\n', JSON.stringify(res, null, 2).slice(0, 3000));
   process.exit(1);
 }
 
