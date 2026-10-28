@@ -7,7 +7,7 @@ seller's voice and language (Bangla, English, Banglish).
 
 ## Stack
 - web/: React + Vite + Tailwind, mobile-first (deployed on Vercel)
-- backend/: Node 20 + Express, ES modules (deployed on Render)
+- backend/: Node 22 + Express, ES modules (deployed on Render)
 - Database: Supabase Postgres
 - AI: Meta Model API via OpenAI SDK, baseURL https://api.meta.ai/v1
   - muse-spark-1.3: tagging, classification, analysis, post writing
