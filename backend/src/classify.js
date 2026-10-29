@@ -1,5 +1,5 @@
 import { db } from './db.js';
-import { completeJSON } from './ai.js';
+import { clip, completeJSON } from './ai.js';
 import { hasAuthorColumns } from './schema.js';
 
 const BATCH_SIZE = 75; // 50–100 per request keeps the number of reasoning-heavy calls small
@@ -45,7 +45,7 @@ export const BATCH = BATCH_SIZE;
 
 // The model request for a batch of comments; also used by the provider comparison script.
 export function classifyRequest(comments) {
-  const input = comments.map((c) => `id: ${c.id}\ntext: ${c.message.slice(0, 500)}`).join('\n---\n');
+  const input = comments.map((c) => `id: ${c.id}\ntext: ${clip(c.message, 500)}`).join('\n---\n');
   return {
     messages: [{ role: 'user', content: `${INSTRUCTIONS}\n\nComments:\n${input}` }],
     response_format: { type: 'json_schema', json_schema: { name: 'comment_intents', schema: SCHEMA } },

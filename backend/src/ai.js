@@ -2,12 +2,13 @@ import OpenAI from 'openai';
 import { meta, MODELS } from './meta.js';
 
 // Where each AI task runs. BULK_PROVIDER switches every bulk task at once; PROVIDER_<TASK> overrides one.
-// Stays on 'meta' until the Baseten results have been compared (npm run test:banglish).
-const BULK = process.env.BULK_PROVIDER || 'meta';
+// Baseten (Muse Spark Open) is the default for bulk work; set BULK_PROVIDER=meta to move everything back.
+const BULK = process.env.BULK_PROVIDER || 'baseten';
 export const TASKS = {
   comment_classification: { provider: process.env.PROVIDER_COMMENT_CLASSIFICATION || BULK, lowEffort: true },
   post_tagging: { provider: process.env.PROVIDER_POST_TAGGING || BULK, lowEffort: true },
   playbook: { provider: process.env.PROVIDER_PLAYBOOK || BULK, lowEffort: true },
+  name_scan: { provider: process.env.PROVIDER_NAME_SCAN || BULK, lowEffort: true },
   post_generation: { provider: process.env.PROVIDER_POST_GENERATION || 'meta', lowEffort: false },
 };
 
@@ -24,6 +25,9 @@ export const PROVIDERS = {
     lowestEffort: 'low',
   },
 };
+
+// Cut text to n characters without splitting an emoji's surrogate pair (a lone half makes the request body invalid JSON).
+export const clip = (text, n) => Array.from(String(text ?? '').toWellFormed()).slice(0, n).join('');
 
 // Reasoning models return their thinking in message.reasoning_content; only message.content is the answer.
 // Some builds put <think>…</think> inside content instead, so strip that too.

@@ -12,6 +12,8 @@
     "demo:export": "node scripts/demo-export.js",
     "demo:seed": "node scripts/demo-seed.js",
     "test:compare": "node tests/05-compare-classification.js",
+    "demo:analyze": "node scripts/demo-analyze.js",
+    "demo:scan": "node scripts/demo-scan-snapshot.js",
     "demo:save-analysis": "node scripts/demo-save-analysis.js"
   },
   "dependencies": {

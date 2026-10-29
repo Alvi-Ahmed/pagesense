@@ -1,9 +1,19 @@
 // Load demo/snapshot.json into the database as page "demo". Idempotent; touches only demo rows.
-// Run: npm run demo:seed
+// --reset first deletes the demo's posts (and with them its comments and tags), playbooks and analysis jobs,
+// so a re-exported snapshot replaces the old one instead of mixing with it.
+// Run: npm run demo:seed [-- --reset]
 import fs from 'node:fs';
 import { db } from '../src/db.js';
 
 const snap = JSON.parse(fs.readFileSync(new URL('../demo/snapshot.json', import.meta.url), 'utf8'));
+
+if (process.argv.includes('--reset')) {
+  for (const [table, column] of [['playbooks', 'page_id'], ['analysis_jobs', 'page_id'], ['posts', 'page_id']]) {
+    const { error } = await db.from(table).delete().eq(column, 'demo'); // never anything but the demo page
+    if (error) throw new Error(`reset ${table}: ${error.message}`);
+  }
+  console.log('demo rows cleared');
+}
 
 async function upsert(table, rows) {
   for (let i = 0; i < rows.length; i += 500) {

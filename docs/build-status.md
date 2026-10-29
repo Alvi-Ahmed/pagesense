@@ -11,9 +11,9 @@ Status: DONE / PARTIAL / MISSING. Update this file after each item.
 4. DONE: Comment classification (batched): intent (price_question, size_or_color_request,
    stock_or_restock, order_intent, interested, delivery_question, product_question, complaint,
    negotiation, praise, other), plus size and color. Runs as a stage of the analysis job.
-   75 comments per request, structured output, lowest reasoning effort. Baseten
-   (meta-models/muse-spark-open) is wired in but off by default until its results are reviewed.
-   Provider layer: src/ai.js maps each task to a provider (BULK_PROVIDER, default meta, or PROVIDER_<TASK>);
+   75 comments per request, structured output, lowest reasoning effort. Bulk tasks
+   default to Baseten (meta-models/muse-spark-open); post generation stays on the Meta API.
+   Provider layer: src/ai.js maps each task to a provider (BULK_PROVIDER, default baseten, or PROVIDER_<TASK>);
    a failing Baseten call falls back to muse-spark-1.3 and is logged.
    Demo snapshot carries tags, intents and the playbook (npm run demo:save-analysis refreshes it).
    The page's own comments are not classified. npm run test:compare compares providers on the demo comments.
@@ -29,8 +29,9 @@ Status: DONE / PARTIAL / MISSING. Update this file after each item.
    GET /pages/:id/playbook, POST /pages/:id/posts/:postId/boosted, GET /pages/:id/replies.
    Demo mode is read-only: boosted toggles stay in the visitor's tab and POST /pages/demo/playbook/preview
    computes the result in memory. Demo tag/analysis/boosted writes are refused.
-   Known: the demo snapshot keeps the 120 newest posts plus the 30 top-engagement posts, so its median is
-   ~5 while the top-30 median is ~785; demo patterns mostly reflect that sampling.
+   Sanity guard: a pattern needs 10+ posts and at most 10x the typical post to be the headline; anything
+   stronger or thinner is listed as "unusual, worth checking". Lifts are written in plain words
+   ("about twice the engagement of your typical post"), never as raw percentages or "105.8 times".
 6. MISSING: Catalog: products from posts (name, sizes, colors, price if mentioned, linked posts),
    editable, status in stock / pre-order / sold out.
 7. MISSING: Orders: orders and leads from comments, missing details flagged, owner confirmation.
@@ -54,7 +55,9 @@ Status: DONE / PARTIAL / MISSING. Update this file after each item.
 16. MISSING: Create post screen.
 17. MISSING: Orders screen.
 18. MISSING: Catalog screen.
-19. DONE: Demo mode (anonymized snapshot, same endpoints as real mode).
+19. PARTIAL: Demo mode (anonymized snapshot, same endpoints as real mode). Snapshot re-exported: newest 150
+    posts, names replaced by "Customer N", author/parent fields. Still to do: run migration 003, then
+    npm run demo:seed -- --reset, npm run demo:analyze, npm run demo:save-analysis.
 20. PARTIAL: Loading, empty and error states everywhere.
 
 ## Build order for what's left

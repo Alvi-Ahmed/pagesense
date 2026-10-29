@@ -22,20 +22,19 @@ function Card({ title, children }) {
 
 // One bar per group, scaled to the largest; the tick marks the typical post.
 function Bars({ groups, average }) {
-  const max = Math.max(...groups.map((g) => g.median_engagement), average)
+  const max = Math.min(Math.max(...groups.map((g) => g.median_engagement), average), average * 4 || Infinity) // bars stop at 4x typical
   return (
     <ul className="flex flex-col gap-3">
       {groups.map((g) => (
         <li key={g.value} className="flex flex-col gap-1">
           <div className="flex items-baseline justify-between gap-3 text-sm">
             <span className="font-semibold first-letter:uppercase">{g.value}</span>
-            <span className="text-xs text-muted">
-              {g.posts} posts · {g.vs_typical}
-            </span>
+            <span className="shrink-0 text-xs text-muted">{g.posts} posts</span>
           </div>
+          <p className="text-xs text-muted">{g.vs_typical}</p>
           <div className="relative h-3 rounded-full bg-track">
-            <div className={`h-full rounded-full ${g.engagement_vs_page_pct >= 0 ? 'bg-accent' : 'bg-bar-grey'}`}
-              style={{ width: `${Math.max(2, (g.median_engagement / max) * 100)}%` }} />
+            <div className={`h-full rounded-full ${g.lift >= 1 ? 'bg-accent' : 'bg-bar-grey'}`}
+              style={{ width: `${Math.min(100, Math.max(2, (g.median_engagement / max) * 100))}%` }} />
             <div className="absolute inset-y-[-3px] w-0.5 bg-ink" style={{ left: `${(average / max) * 100}%` }} />
           </div>
         </li>
@@ -132,6 +131,20 @@ export function Playbook() {
             {summary.supporting.map((s) => <li key={s.text} className="border-l-2 border-accent-pale pl-3">{s.text}</li>)}
           </ul>
         </Card>
+      )}
+
+      {data.unusual?.length > 0 && (
+        <section className="flex flex-col gap-2.5 rounded-card border border-amber-line bg-amber-soft px-4 py-4 text-amber-ink">
+          <h2 className="text-[15px] font-bold">Unusual, worth checking</h2>
+          <p className="text-sm">These look strong but rest on very few posts or an extreme jump, so they are not treated as findings.</p>
+          <ul className="flex flex-col gap-1.5 text-sm">
+            {data.unusual.map((u) => (
+              <li key={`${u.dimension}-${u.value}`} className="border-l-2 border-amber-line pl-3">
+                <span className="font-semibold">{u.label}: {u.value}</span> ({u.posts} posts): {u.vs_typical}.
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       <Card title="What customers ask before buying">

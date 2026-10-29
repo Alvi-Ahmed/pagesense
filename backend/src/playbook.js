@@ -45,18 +45,29 @@ const median = (xs) => {
   return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
 };
 const round = (n) => Math.round(n * 10) / 10;
-// Signed whole-number percent difference from the page figure, e.g. +91 or -20.
-const pctVs = (value, base) => (base ? Math.round((value / base - 1) * 100) : null);
-// Plain wording for a lift: percentages read badly once a group is several times the typical post.
-const vsTypical = (value, base) => {
-  if (!base) return null;
-  const pct = Math.round((value / base - 1) * 100);
-  if (pct >= 200) return `${round(value / base)} times the typical post`;
-  return pct >= 0 ? `${pct}% above typical` : `${-pct}% below typical`;
-};
+const WORDS = { 2: 'twice', 2.5: 'two and a half times', 3: 'three times', 3.5: 'three and a half times', 4: 'four times',
+  4.5: 'four and a half times', 5: 'five times', 5.5: 'five and a half times', 6: 'six times', 6.5: 'six and a half times',
+  7: 'seven times', 7.5: 'seven and a half times', 8: 'eight times', 8.5: 'eight and a half times', 9: 'nine times',
+  9.5: 'nine and a half times', 10: 'ten times' };
+
+// A lift (group median / typical median) in plain words. Nobody should read "105.8 times".
+export function plainLift(ratio) {
+  if (ratio == null || !Number.isFinite(ratio)) return null;
+  if (ratio > MAX_LIFT) return 'far more than ten times the engagement of your typical post';
+  if (ratio >= 1.9) return `about ${WORDS[Math.min(10, Math.round(ratio * 2) / 2)]} the engagement of your typical post`;
+  if (ratio >= 1.5) return 'nearly twice the engagement of your typical post';
+  if (ratio >= 1.25) return 'clearly more engagement than your typical post';
+  if (ratio >= 1.1) return 'a little more engagement than your typical post';
+  if (ratio >= 0.9) return 'about the same engagement as your typical post';
+  if (ratio >= 0.6) return 'somewhat less engagement than your typical post';
+  if (ratio >= 0.4) return 'about half the engagement of your typical post';
+  return 'much less engagement than your typical post';
+}
 
 // Headline needs at least this many posts behind it.
 const HEADLINE_POSTS = 10;
+const MAX_LIFT = 10; // a group more than this many times the typical post is more likely a quirk than a pattern
+const UNUSUAL_MIN_LIFT = 1.5;
 const PRICE_SHARE_ALERT_PCT = 20;
 
 // Pure: posts, tags (by post id) and buying-comment counts (by post id) in, patterns out.
@@ -81,30 +92,32 @@ export function computePatterns(posts, tags, buying) {
     }
     const rows = [...groups].filter(([, ps]) => ps.length >= MIN_POSTS).map(([value, ps]) => {
       const engagement = median(ps.map((p) => Number(p.engagement_score)));
-      const buyer = avg(ps.map((p) => buying.get(p.id) || 0));
-      const pct = pctVs(engagement, base.engagement);
+      const ratio = base.engagement ? engagement / base.engagement : null;
       return {
         value, posts: ps.length,
-        median_engagement: round(engagement), engagement_vs_page_pct: pct, vs_typical: vsTypical(engagement, base.engagement),
-        rank_score: pct == null ? null : round((pct / 100) * Math.sqrt(ps.length)),
-        avg_buyer_comments: round(buyer), buyer_comments_vs_page_pct: pctVs(buyer, base.buyer_comments),
+        median_engagement: round(engagement), lift: ratio == null ? null : Math.round(ratio * 100) / 100,
+        vs_typical: plainLift(ratio),
+        rank_score: ratio == null ? null : round((ratio - 1) * Math.sqrt(ps.length)),
+        avg_buyer_comments: round(avg(ps.map((p) => buying.get(p.id) || 0))),
       };
     }).sort((a, b) => b.median_engagement - a.median_engagement);
     if (rows.length >= 2) dimensions.push({ key, label: dim.label, groups: rows }); // one group has nothing to compare with
   }
 
-  // Ranked patterns: groups with enough posts for a headline, best adjusted lift first.
-  const ranked = dimensions
-    .flatMap((d) => d.groups.filter((g) => g.posts >= HEADLINE_POSTS && g.rank_score != null)
-      .map((g) => ({ dimension: d.key, label: d.label, ...g })))
-    .sort((a, b) => b.rank_score - a.rank_score);
-  const strongest = ranked[0]?.engagement_vs_page_pct > 0 ? ranked[0] : null;
+  const all = dimensions.flatMap((d) => d.groups.filter((g) => g.lift != null).map((g) => ({ dimension: d.key, label: d.label, ...g })));
+  // Headline candidates: enough posts and a believable lift, best adjusted lift first.
+  const ranked = all.filter((g) => g.posts >= HEADLINE_POSTS && g.lift <= MAX_LIFT).sort((a, b) => b.rank_score - a.rank_score);
+  const strongest = ranked[0]?.lift > 1 ? ranked[0] : null;
+  // Strong-looking groups that cannot be the headline: thin evidence or an extreme jump. Shown as "worth checking".
+  const unusual = all.filter((g) => g.lift >= UNUSUAL_MIN_LIFT && (g.posts < HEADLINE_POSTS || g.lift > MAX_LIFT))
+    .sort((a, b) => b.lift - a.lift).slice(0, 5)
+    .map((g) => ({ ...g, reason: g.lift > MAX_LIFT ? 'extreme jump' : 'few posts' }));
 
   // Price shown vs not: always computed, even when one side is too small to rank.
   const side = (flag) => {
     const ps = organic.filter((p) => tags.get(p.id) && tags.get(p.id).price_shown === flag);
     const m = median(ps.map((p) => Number(p.engagement_score)));
-    return { posts: ps.length, median_engagement: round(m), engagement_vs_page_pct: pctVs(m, base.engagement) };
+    return { posts: ps.length, median_engagement: round(m) };
   };
   const price = { shown: side(true), not_shown: side(false) };
   price.enough = price.shown.posts >= MIN_POSTS && price.not_shown.posts >= MIN_POSTS;
@@ -113,6 +126,7 @@ export function computePatterns(posts, tags, buying) {
     basis: { posts: organic.length, boosted_excluded: posts.length - organic.length, median_engagement: round(base.engagement), avg_buyer_comments: round(base.buyer_comments) },
     strongest,
     ranked: ranked.slice(0, 8),
+    unusual,
     price,
     dimensions,
   };
@@ -154,13 +168,27 @@ export const INTENT_LABELS = {
   praise: 'praising', other: 'other (tags, greetings, seller replies)',
 };
 
-async function explain(patterns, intents, price_question_share_pct) {
+// What the model gets: plain-word lifts and post counts only. Unusual patterns are left out on purpose:
+// they are shown to the owner as "worth checking", never as findings.
+function modelInput(patterns, intents, price_question_share_pct) {
+  const group = (g) => ({ value: g.value, posts: g.posts, vs_typical: g.vs_typical });
   const named = Object.fromEntries(Object.entries(intents).map(([k, n]) => [INTENT_LABELS[k] || k, n]));
-  const input = { ...patterns, price_question_share_pct, comment_intents: named };
+  return {
+    posts_compared: patterns.basis.posts,
+    strongest: patterns.strongest && { pattern: patterns.strongest.label, ...group(patterns.strongest) },
+    ranked: patterns.ranked.map((g) => ({ dimension: g.dimension, pattern: g.label, ...group(g) })),
+    patterns: patterns.dimensions.map((d) => ({ dimension: d.key, pattern: d.label, groups: d.groups.map(group) })),
+    price_question_share_pct,
+    comment_intents: named,
+  };
+}
+
+async function explain(patterns, intents, price_question_share_pct) {
+  const input = modelInput(patterns, intents, price_question_share_pct);
   const prompt = `You explain what works on a small seller's Facebook page, in plain, friendly English a shopkeeper understands.
-Below are numbers computed from the page's own posts. "engagement_vs_page_pct" says how much higher (positive) or lower (negative) a group's typical (median) engagement is than the page's typical post; "buyer_comments_vs_page_pct" is the same for comments asking to buy (price, size, stock, order). "strongest" is the pattern with the best lift adjusted for how many posts back it (null if no pattern has ${HEADLINE_POSTS} or more posts); "ranked" lists the best patterns in order. "comment_intents" counts what customers' comments are about.
+Below are results computed from the page's own posts. For each group of posts, "vs_typical" says in words how its engagement compares with the page's typical post. "strongest" is the best pattern (null if no pattern has ${HEADLINE_POSTS} or more posts behind it); "ranked" lists the best patterns in order. "comment_intents" counts what customers' comments are about.
 Rules:
-- Use ONLY numbers that appear in the data. Quote each group's "vs_typical" wording and post counts exactly as given (for example "91% above typical", "based on 49 posts"). Never compute new numbers, never write any other number, and do not guess causes.
+- Use ONLY what is in the data. Quote each group's "vs_typical" wording exactly as written (for example "about twice the engagement of your typical post"). Never write a percentage, never write "times" with a digit, never compute new numbers, and do not guess causes. The only digits allowed are post counts and comment counts copied from the data.
 - headline: one sentence about the strongest pattern, with its post count. If strongest is null, say that no pattern has ${HEADLINE_POSTS} or more posts behind it yet.
 - supporting: 2 to 4 more findings from other patterns or from comment_intents; each has "dimension" (a key from the data, or "comment_intents") and one-sentence "text".
 - actions: exactly 3 different, concrete instructions for the seller's next posts, each a full sentence that starts with a verb (for example "Post your next discount offer in the evening."), without numbers. Do not write an action about showing the price: that is added separately.
@@ -234,8 +262,11 @@ async function compute(pageId, overrides = {}) {
 function priceAction({ price }) {
   if (price.share_pct <= PRICE_SHARE_ALERT_PCT) return null;
   let text = `Show the price in every post: ${price.share_pct}% of comments (${price.question_comments} of ${price.classified_comments}) ask for it.`;
-  if (price.enough) {
-    text += ` Posts showing a price have a median engagement of ${price.shown.median_engagement} (${price.shown.posts} posts), against ${price.not_shown.median_engagement} for posts without one (${price.not_shown.posts} posts).`;
+  // The comparison only goes in when both sides have enough posts and the gap is believable.
+  const { shown, not_shown } = price;
+  const ratio = not_shown.median_engagement ? shown.median_engagement / not_shown.median_engagement : null;
+  if (shown.posts >= HEADLINE_POSTS && not_shown.posts >= HEADLINE_POSTS && ratio != null && ratio >= 1.1 && ratio <= MAX_LIFT) {
+    text += ` Posts that show a price get ${plainLift(ratio).replace(' of your typical post', ' of posts without one')} (${shown.posts} posts against ${not_shown.posts}).`;
   }
   return text;
 }

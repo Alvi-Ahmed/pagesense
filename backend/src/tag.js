@@ -1,6 +1,6 @@
 import { db } from './db.js';
 import sharp from 'sharp';
-import { completeJSON } from './ai.js';
+import { clip, completeJSON } from './ai.js';
 
 const BATCH_SIZE = 20; // API allows 50 images per request; smaller keeps payloads and retries cheap
 
@@ -61,7 +61,7 @@ async function photoDataUrl(url) {
 function buildContent(posts) {
   const content = [{ type: 'text', text: INSTRUCTIONS }];
   for (const p of posts) {
-    content.push({ type: 'text', text: `post_id: ${p.id}\ncaption: ${(p.message || '').slice(0, 500) || '(none)'}` });
+    content.push({ type: 'text', text: `post_id: ${p.id}\ncaption: ${clip(p.message, 500) || '(none)'}` });
     content.push({ type: 'image_url', image_url: { url: p.image } });
   }
   return content;
