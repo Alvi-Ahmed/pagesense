@@ -2,6 +2,7 @@ import { db } from './db.js';
 import { clip, completeJSON } from './ai.js';
 import { latestPlaybook } from './playbook.js';
 import { findPersonalNames } from './names.js';
+import { showableUrl } from './photos.js';
 
 export const LANGUAGES = ['bangla', 'english', 'banglish'];
 // Facts we may not know. The model must write these exactly instead of inventing a value.
@@ -132,7 +133,7 @@ function playbookContext(pb) {
 const COLORS = ['red', 'blue', 'green', 'black', 'white', 'pink', 'yellow', 'purple', 'orange', 'brown', 'grey', 'gray', 'beige', 'maroon', 'navy', 'golden', 'silver', 'cream'];
 
 // Everything the caption may not do. Returns a list of problems; an empty list means it can be shown.
-export function checkCaption(caption, { allowedNumbers, knownText, priceRequired, language, forbiddenNames = [] }) {
+export function checkCaption(caption, { allowedNumbers, knownText, priceRequired, language, forbiddenNames = [], requiredPrice = null, requiredPlaceholders = [], noOffer = false, requiredNumbers = [], stockKnown = false }) {
   const problems = [];
   const text = String(caption ?? '').trim();
   if (text.length < 20) return ['the caption is empty or far too short'];
@@ -166,6 +167,28 @@ export function checkCaption(caption, { allowedNumbers, knownText, priceRequired
   }
   if (priceRequired && !text.includes('[PRICE]') && ![...allowedNumbers].some((n) => numbersIn(withoutPlaceholders).has(n))) {
     problems.push('many customers ask the price, so the caption must show the price or the placeholder [PRICE]');
+  }
+  // new product: the owner gave the price, so it must be written out (and [PRICE] has no place); empty fields must be placeholders
+  if (requiredPrice) {
+    if (!numbersIn(withoutPlaceholders).has(requiredPrice)) problems.push(`the price is known: write it (${requiredPrice})`);
+    if (text.includes('[PRICE]')) problems.push('the price is known, so do not use [PRICE]');
+  }
+  for (const name of requiredPlaceholders) {
+    if (!text.includes(`[${name}]`)) problems.push(`${name.toLowerCase()} was left empty by the owner: include the placeholder [${name}]`);
+  }
+  if (noOffer && /\b(?:discount|sale|offer|clearance|combo|free delivery|\d+\s*%\s*off)\b|ছাড়|অফার/i.test(withoutPlaceholders)) {
+    problems.push('no offer was given, so do not mention a discount, sale or offer');
+  }
+  // availability is the owner's to state: pre-order, limited stock, sold out are never taken from the page's style
+  const claims = withoutPlaceholders.match(/\b(?:pre-?order|limited (?:stock|edition|pieces)|sold out|back in stock|last (?:piece|pair)|hurry)\b|প্রি-?অর্ডার/gi) || [];
+  for (const c of new Set(claims.map((x) => x.toLowerCase()))) {
+    if (!knownText.toLowerCase().includes(c)) problems.push(`"${c}" is not a known fact: leave availability claims out`);
+  }
+  if (!stockKnown && /\b(?:in stock|ready stock|available now)\b/i.test(withoutPlaceholders) && !/in stock|ready stock/i.test(knownText)) {
+    problems.push('stock is not known: write [STOCK] instead of claiming it is in stock');
+  }
+  for (const n of requiredNumbers) {
+    if (!numbersIn(withoutPlaceholders).has(n)) problems.push(`the owner's offer includes ${n}: mention the offer exactly as given`);
   }
   const bn = bengaliShare(text);
   if (language === 'bangla' && bn < 0.4) problems.push('write in Bangla script (বাংলা)');
@@ -234,15 +257,15 @@ const IMPROVE_SCHEMA = {
   additionalProperties: false,
 };
 
-const rulesBlock = (ctx, languageRule, priceRequired) => `RULES (all enforced by code; a caption that breaks one is thrown away):
+const rulesBlock = (ctx, languageRule, priceRequired, extra = {}) => `RULES (all enforced by code; a caption that breaks one is thrown away):
 - ${languageRule}
 - Unknown facts are price, sizes, colors, delivery charge and stock count. Never invent them. Write exactly one of ${PLACEHOLDERS.map((p) => `[${p}]`).join(', ')} where such a fact belongs.
 - Any number in the caption must appear in the known facts; if not, do not write a number at all (no discounts, percentages, sizes, prices or phone numbers you made up).
-- ${priceRuleText(ctx.price_question_share_pct, priceRequired)}
-- No customer names, no @mentions, no links, nothing taken from customer comments.
+- ${extra.priceRule || priceRuleText(ctx.price_question_share_pct, priceRequired)}
+${(extra.lines || []).map((l) => `- ${l}\n`).join('')}- No customer names, no @mentions, no links, nothing taken from customer comments.
 - Same style as the examples: their tone, length, emoji and layout. Do not copy their facts, prices, policies (refund, exchange, cancellation) or promises. Plain text only: no ** or markdown.`;
 
-function generatePrompt({ ctx, examples, facts, language, priceRequired, hint, problems }) {
+function generatePrompt({ ctx, examples, facts, language, priceRequired, hint, problems, extra }) {
   return `You write Facebook post captions for a small seller in Bangladesh, in the seller's own voice.
 
 THE SELLER'S BEST CAPTIONS (style only):
@@ -254,7 +277,7 @@ ${JSON.stringify({ patterns: ctx.patterns, actions: ctx.actions })}
 KNOWN FACTS ABOUT THE PRODUCT (nothing else is known):
 ${JSON.stringify(facts)}
 ${hint ? `\nOWNER'S BRIEF (a suggestion from the playbook; treat it as a topic, not as facts): ${JSON.stringify(clip(hint, 300))}\n` : ''}
-${rulesBlock(ctx, LANGUAGE_RULE[language], priceRequired)}
+${rulesBlock(ctx, LANGUAGE_RULE[language], priceRequired, extra)}
 
 Return JSON: "caption" (the post), and "why": 2 or 3 items, each with "ref" (one id from patterns or actions above, using different ids) and "reason" (one plain sentence on how this caption uses that pattern; no numbers except post counts shown above).
 ${problems?.length ? `\nYOUR PREVIOUS ANSWER WAS REJECTED. Fix these problems:\n- ${problems.join('\n- ')}\n` : ''}`;
@@ -282,7 +305,7 @@ ${problems?.length ? `\nYOUR PREVIOUS ANSWER WAS REJECTED. Fix these problems:\n
 }
 
 // ---- running a request ---------------------------------------------------------------------
-async function runWithChecks({ build, schema, schemaName, validateShape, extraCheck, language, allowedNumbers, knownText, priceRequired, ctxJson, forbiddenNames }) {
+async function runWithChecks({ build, schema, schemaName, validateShape, extraCheck, language, allowedNumbers, knownText, priceRequired, ctxJson, forbiddenNames, rules = {} }) {
   let problems = [];
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     const { data } = await completeJSON('post_generation', {
@@ -292,7 +315,7 @@ async function runWithChecks({ build, schema, schemaName, validateShape, extraCh
     const caption = String(data.caption || '').trim();
     const langForCheck = language || (bengaliShare(caption) > 0.4 ? 'bangla' : 'english');
     problems = [
-      ...checkCaption(caption, { allowedNumbers, knownText, priceRequired, language: langForCheck, forbiddenNames }),
+      ...checkCaption(caption, { allowedNumbers, knownText, priceRequired, language: langForCheck, forbiddenNames, ...rules }),
       ...extraCheck(data, ctxJson),
     ];
     if (!problems.length) return { data, caption, attempts: attempt };
@@ -356,6 +379,65 @@ export async function generatePost(pageId, { productKey, description, language, 
     patterns_used: usedPatterns(ctx, data.why.map((w) => w.ref)),
     placeholders: [...new Set([...caption.matchAll(/\[([^\]]+)\]/g)].map((m) => m[1]))],
     photo_url: product?.photo_url ?? null, source_post_id: product?.post_id ?? null,
+  };
+}
+
+// ---- generate for a NEW product (uploaded photos + the owner's details form) ---------------------------------
+const clean = (v, n) => clip(String(v ?? '').replace(/[\u0000-\u001f]/g, ' ').trim(), n);
+const splitList = (v) => clean(v, 120).split(/[,;\n]/).map((x) => x.trim()).filter(Boolean).slice(0, 12);
+
+// The owner's form, checked and tidied. Only the price is required.
+export function parseProductForm(form = {}) {
+  const priceText = toAscii(form.price).replace(/[,\s৳]|tk\.?|taka|bdt/gi, '');
+  const price = Number(priceText);
+  if (!priceText || !Number.isFinite(price) || price <= 0) throw fail('Enter the price, for example 950.');
+  const stockText = toAscii(form.stock).replace(/[,\s]/g, '');
+  const stock = stockText === '' ? null : Math.floor(Number(stockText));
+  if (stock !== null && (!Number.isFinite(stock) || stock < 0)) throw fail('Stock must be a number, or leave it empty.');
+  return {
+    name: clean(form.name, 80) || null, price, sizes: splitList(form.sizes), colors: splitList(form.colors),
+    stock, offer: clean(form.offer, 100) || null,
+  };
+}
+
+function newProductFacts(f, analysis) {
+  return {
+    product_name: f.name, product_type: analysis?.product_type || null, looks_like: analysis?.product_phrase || null,
+    price: { amount: f.price, currency: 'Bangladeshi taka (Tk or ৳)' },
+    sizes: f.sizes.length ? f.sizes : null, colors: f.colors.length ? f.colors : null, stock: f.stock, offer: f.offer,
+  };
+}
+
+export async function generateNewProduct(pageId, { form, analysis, language }) {
+  if (!LANGUAGES.includes(language)) throw fail(`language must be one of ${LANGUAGES.join(', ')}`);
+  const f = parseProductForm(form);
+  const { ctx, examples, names, ctxJson } = await loadContext(pageId);
+  const facts = newProductFacts(f, analysis);
+  const factsJson = JSON.stringify(facts);
+  const missing = [!f.sizes.length && 'SIZES', !f.colors.length && 'COLORS', f.stock === null && 'STOCK'].filter(Boolean);
+  const extra = {
+    priceRule: `The price is KNOWN and must appear in the caption: ${f.price} taka. Write the number exactly (for example "Tk ${f.price}" or "${f.price} taka"). Do not write [PRICE].`,
+    lines: [
+      'Facts marked null are unknown. Never guess them.',
+      ...(missing.length ? [`These were left empty by the owner, so the caption must contain these exact placeholders: ${missing.map((m) => `[${m}]`).join(', ')}.`] : []),
+      ...(f.offer ? [`The owner's offer is ${JSON.stringify(f.offer)}: mention it exactly as given, including its numbers.`] : ['No offer was given: do not mention any discount, sale or offer.']),
+      'Do not claim availability (pre-order, limited stock, sold out, in stock) unless it is in the known facts.',
+    ],
+  };
+  const { data, caption, attempts } = await runWithChecks({
+    build: (problems) => generatePrompt({ ctx, examples, facts, language, priceRequired: false, problems, extra }),
+    schema: GENERATE_SCHEMA, schemaName: 'post_caption',
+    validateShape: (d) => { if (typeof d?.caption !== 'string' || !Array.isArray(d.why)) throw new Error('answer is missing caption or why'); },
+    extraCheck: (d, json) => checkWhy(d, json, ctx),
+    language, allowedNumbers: numbersIn(factsJson), knownText: factsJson, priceRequired: false, ctxJson, forbiddenNames: names,
+    rules: { requiredPrice: String(f.price), requiredPlaceholders: missing, noOffer: !f.offer, stockKnown: f.stock !== null, requiredNumbers: f.offer ? [...numbersIn(f.offer)] : [] },
+  });
+  return {
+    kind: 'generate', caption, language, attempts, product: { name: f.name, ...f },
+    why: data.why.map((w) => ({ ref: w.ref, reason: w.reason, pattern: ctx.patterns.find((p) => p.id === w.ref) || null, action: ctx.actions.find((a) => a.id === w.ref)?.text || null })),
+    patterns_used: usedPatterns(ctx, data.why.map((w) => w.ref)),
+    placeholders: [...new Set([...caption.matchAll(/\[([^\]]+)\]/g)].map((m) => m[1]))],
+    photo_url: null, source_post_id: null,
   };
 }
 
@@ -426,7 +508,7 @@ export async function listDrafts(pageId) {
   const { data, error } = await db.from('post_drafts').select('*').eq('page_id', pageId)
     .eq('status', 'draft').order('created_at', { ascending: false }).limit(20);
   if (error) throw error;
-  return data;
+  return Promise.all(data.map(async (d) => ({ ...d, photo_url: await showableUrl(d.photo_url) })));
 }
 
 export async function updateDraft(pageId, draftId, caption) {

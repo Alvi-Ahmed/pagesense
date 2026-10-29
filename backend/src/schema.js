@@ -18,3 +18,14 @@ export async function hasStageTable() {
   stageTable = { at: Date.now(), value: !error };
   return stageTable.value;
 }
+
+// Columns added by later migrations (005 for products and drafts). `table.column` -> exists, cached for a minute.
+const columnCache = new Map();
+export async function hasColumns(table, columns) {
+  const key = `${table}:${columns.join(',')}`;
+  const hit = columnCache.get(key);
+  if (hit && (hit.value || Date.now() - hit.at < 60_000)) return hit.value;
+  const { error } = await db.from(table).select(columns.join(',')).limit(1);
+  columnCache.set(key, { at: Date.now(), value: !error });
+  return !error;
+}

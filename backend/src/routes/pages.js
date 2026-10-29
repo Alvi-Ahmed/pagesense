@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import express, { Router } from 'express';
 import { listUserPages } from '../facebook.js';
 import { startSync, getSyncStatus } from '../sync.js';
 import { startTagging, getTagStatus } from '../tag.js';
@@ -7,7 +7,9 @@ import { db } from '../db.js';
 import { startAnalysis, latestAnalysis } from '../analysis.js';
 import { latestPlaybook, previewPlaybook, setBoosted } from '../playbook.js';
 import { needsReply } from '../replies.js';
-import { generatePost, improvePost, listDrafts, listProducts, saveDraft, updateDraft } from '../generate.js';
+import { generateNewProduct, generatePost, improvePost, listDrafts, listProducts, saveDraft, updateDraft } from '../generate.js';
+import { analyzePhotos, saveNewProduct } from '../newProduct.js';
+import { cleanPhoto, refFor, showableUrl, storePhoto, MAX_BYTES } from '../photos.js';
 import { rateLimit } from '../rateLimit.js';
 
 const router = Router();
@@ -17,7 +19,7 @@ const requireManager = async (req, res, next) => {
   // Demo page: a seeded snapshot with no Facebook token, so there is nothing to protect or to call.
   if (req.params.id === DEMO_PAGE_ID) return next();
   try {
-    const { accessToken } = req.body;
+    const accessToken = req.body?.accessToken || req.get('x-access-token'); // uploads are raw images, so the token comes in a header
     if (!accessToken) return res.status(400).json({ error: 'accessToken is required' });
     const pages = await listUserPages(accessToken);
     if (!pages.some((p) => p.id === req.params.id)) {
@@ -129,8 +131,52 @@ router.get('/:id/posts/products', async (req, res) => {
   }
 });
 
-router.post('/:id/posts/generate', requireManager, generationLimit, (req, res) =>
-  respondWithDraft(req, res, () => generatePost(req.params.id, req.body)));
+router.post('/:id/posts/generate', requireManager, generationLimit, async (req, res) => {
+  // A new product is only saved (product and draft together) when the owner presses Save, so nothing is stored here.
+  if (!req.body.newProduct) return respondWithDraft(req, res, () => generatePost(req.params.id, req.body));
+  try {
+    res.json(await generateNewProduct(req.params.id, { ...req.body.newProduct, language: req.body.language }));
+  } catch (err) {
+    console.error(err.message);
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
+// ---- new product from photos --------------------------------------------------------------------------
+// Real pages: photos are cleaned (EXIF and location removed) and kept in Supabase Storage. The demo never stores
+// anything: its photos stay in the visitor's browser and are sent along (as base64) only to be analysed.
+const uploadLimit = rateLimit((req) => `upload:${req.params.id}`, () => 60);
+router.post('/:id/uploads', rejectDemoWrites, express.raw({ type: ['image/jpeg', 'image/png', 'image/webp'], limit: MAX_BYTES }),
+  requireManager, uploadLimit, async (req, res) => {
+    try {
+      if (!Buffer.isBuffer(req.body) || !req.body.length) return res.status(400).json({ error: 'Send one JPEG, PNG or WebP photo per request.' });
+      const { full, width, height } = await cleanPhoto(req.body);
+      const { id, path } = await storePhoto(req.params.id, full);
+      res.json({ id, url: await showableUrl(refFor(path)), width, height });
+    } catch (err) {
+      console.error(err.message);
+      res.status(err.status || 500).json({ error: err.message });
+    }
+  });
+
+router.post('/:id/products/analyze', requireManager, generationLimit, async (req, res) => {
+  try {
+    res.json(await analyzePhotos(req.params.id, req.body.images, { demo: req.params.id === DEMO_PAGE_ID }));
+  } catch (err) {
+    console.error(err.message);
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
+router.post('/:id/products', rejectDemoWrites, requireManager, async (req, res) => {
+  try {
+    const { product, draft, columns_missing: legacy } = await saveNewProduct(req.params.id, req.body);
+    res.json({ product, draft: { ...draft, photo_url: await showableUrl(draft.photo_url) }, migration_005_pending: legacy });
+  } catch (err) {
+    console.error(err.message);
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
 
 router.post('/:id/posts/improve', requireManager, generationLimit, (req, res) =>
   respondWithDraft(req, res, () => improvePost(req.params.id, req.body)));

@@ -13,6 +13,12 @@ app.use(express.json({ limit: '10mb' }));
 app.use('/auth', authRoutes);
 app.use('/pages', pageRoutes);
 
+app.use((err, _req, res, next) => { // body-parser failures (too large, malformed) as JSON, never an HTML page
+  if (res.headersSent) return next(err);
+  const tooLarge = err.type === 'entity.too.large';
+  res.status(tooLarge ? 413 : err.status || 500).json({ error: tooLarge ? 'That upload is too large (10 MB per photo).' : err.message });
+});
+
 app.get('/health', (_req, res) => {
   res.json({ ok: true, service: 'pagesense-backend', time: new Date().toISOString() });
 });

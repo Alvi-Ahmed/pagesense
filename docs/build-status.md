@@ -59,6 +59,19 @@ Status: DONE / PARTIAL / MISSING. Update this file after each item.
    Drafts: real pages store them in post_drafts (details in its `why` jsonb, no new migration);
    GET /pages/:id/drafts, PATCH /pages/:id/drafts/:id. Demo: generation allowed, 20 per visitor per hour
    (429 after that), drafts stay in the visitor's tab, nothing is written to the database.
+   NEW PRODUCT FROM PHOTOS (the main way to create): POST /pages/:id/uploads (1 raw photo, 10 MB max; EXIF and
+   location removed with sharp, stored privately in Supabase Storage bucket product-photos, shown through signed
+   links), POST /pages/:id/products/analyze (1-5 photos -> muse-spark: product type and phrase, suggested name,
+   colors with confidence, style, per-photo worn/flat, background and quality issues; material and brand are
+   only ever "guesses" at low confidence and are stripped from the phrase and name; plus up to 2 photo tips
+   computed in code from the playbook's worn/flat and background groups, only groups with 10+ posts and at
+   most 10x typical, each with both median engagements and post counts), POST /pages/:id/posts/generate with
+   { newProduct: { form, analysis } } (same grounding as above, plus: the owner's price must be written out,
+   empty sizes/colors/stock must be placeholders, offers and availability claims only if given, a given
+   offer's numbers must appear), POST /pages/:id/products (Save: product into the catalog, draft linked to it).
+   Demo: photos go to the server only as base64 to be analysed, are never stored, drafts stay in the tab.
+   db/005_new_products.sql adds stock, offer, photo_paths, analysis to products and product_id to post_drafts;
+   until it is run, those details are kept in the draft's `why` json.
 10. MISSING: Branding: product phrase from muse-spark → SAM 3.1 box (fallback "person", then
     "product") → logo and price badge composited with sharp; product pixels never altered.
 11. MISSING: Publishing approved posts through the Graph API.
@@ -72,7 +85,9 @@ Status: DONE / PARTIAL / MISSING. Update this file after each item.
 15. DONE: Playbook screen: headline, strongest pattern with bar comparison, more findings, what
     customers ask before buying, Do this next, "Was this boosted?" toggles, all other patterns.
     Built from the written spec: docs/design/playbook.png is not in the repo, so check it against the mockup.
-16. DONE: Create screen: product picker (from tags) or describe it yourself, language toggle that regenerates,
+16. DONE: Create screen. Primary flow: upload 1-5 photos of a NEW product -> what we see + photo tips -> short
+    details form prefilled with AI guesses (only price required) -> caption -> Save product and draft.
+    Secondary: "post about a product you already sell": product picker (from tags) or describe it yourself, language toggle that regenerates,
     editable caption, placeholders highlighted with inline fields to fill them, why-this-works chips, Regenerate,
     Copy caption, Schedule / Post to page disabled with a coming-soon note (item 11). "Improve this post" on the
     Playbook's weakest recent posts; Home's "Create this post" prefills the playbook suggestion; drafts on Home.
