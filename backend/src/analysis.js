@@ -27,6 +27,9 @@ async function runJob(job) {
         progress: (processed, total) => update(job.id, { processed, total }),
       });
       failed += result?.failed ?? 0;
+      if (result?.tagged === 0 && result?.failed > 0) {
+        throw new Error(`${stage.name}: all ${result.failed} items failed. Check the server log for the cause.`);
+      }
     }
     await update(job.id, { status: 'done', stage: null, failed_count: failed, finished_at: new Date().toISOString() });
   } catch (err) {

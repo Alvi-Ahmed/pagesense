@@ -1,4 +1,5 @@
 import { db } from './db.js';
+import sharp from 'sharp';
 import { meta, MODELS } from './meta.js';
 
 const BATCH_SIZE = 20; // API allows 50 images per request; smaller keeps payloads and retries cheap
@@ -46,17 +47,35 @@ Return one object per post, in the same order.`;
 const job = new Map();
 export const getTagStatus = (pageId) => job.get(pageId) || { status: 'idle' };
 
+// Meta's API can't fetch Facebook CDN urls ("URL is not fetchable"), so we download the photo
+// ourselves and send it inline, shrunk: tagging doesn't need full resolution.
+async function photoDataUrl(url) {
+  const res = await fetch(url, { signal: AbortSignal.timeout(20_000) });
+  if (!res.ok) throw new Error(`photo download failed: HTTP ${res.status}`);
+  const jpeg = await sharp(Buffer.from(await res.arrayBuffer()))
+    .rotate().resize({ width: 768, height: 768, fit: 'inside', withoutEnlargement: true })
+    .jpeg({ quality: 75 }).toBuffer();
+  return `data:image/jpeg;base64,${jpeg.toString('base64')}`;
+}
+
 function buildContent(posts) {
   const content = [{ type: 'text', text: INSTRUCTIONS }];
   for (const p of posts) {
     content.push({ type: 'text', text: `post_id: ${p.id}\ncaption: ${(p.message || '').slice(0, 500) || '(none)'}` });
-    content.push({ type: 'image_url', image_url: { url: p.photo_url } });
+    content.push({ type: 'image_url', image_url: { url: p.image } });
   }
   return content;
 }
 
 // One model call for a batch. Returns rows for post_tags; ids the model skipped or invented are dropped.
-export async function tagBatch(posts) {
+// Posts whose photo can't be downloaded are left out (and retried on a later run).
+export async function tagBatch(allPosts) {
+  const loaded = await Promise.all(allPosts.map(async (p) => {
+    try { return { ...p, image: p.photo_url.startsWith('data:') ? p.photo_url : await photoDataUrl(p.photo_url) }; }
+    catch (e) { console.error('photo skipped', p.id, e.message); return null; }
+  }));
+  const posts = loaded.filter(Boolean);
+  if (!posts.length) return [];
   const res = await meta.chat.completions.create({
     model: MODELS.spark,
     reasoning_effort: 'minimal', // lowest muse-spark-1.3 accepts; "none" returns 400
@@ -107,12 +126,18 @@ async function run(pageId, limit, state) {
   for (let i = 0; i < todo.length; i += BATCH_SIZE) {
     const batch = todo.slice(i, i + BATCH_SIZE);
     try {
-      await save(await tagBatch(batch), state);
+      const rows = await tagBatch(batch);
+      await save(rows, state);
+      state.failed += batch.length - rows.length; // skipped photos or posts the model left out
     } catch (e) {
       // A bad image (e.g. expired CDN url) fails the whole call: retry one by one so only that post is lost.
       console.error('tag batch failed, retrying singly:', e.message);
       for (const p of batch) {
-        try { await save(await tagBatch([p]), state); }
+        try {
+          const rows = await tagBatch([p]);
+          await save(rows, state);
+          state.failed += 1 - rows.length;
+        }
         catch (err) { state.failed++; console.error('tag failed', p.id, err.message); }
       }
     }
