@@ -1,7 +1,8 @@
 // Test 1: Can Muse Spark understand Banglish / Bangla seller comments?
-// Run: npm run test:banglish
+// Run: npm run test:banglish                      (every configured provider, side by side)
+//      npm run test:banglish -- meta              (one provider)
 // Replace SAMPLE_COMMENTS with 20 real comments from a seller page for a true test.
-import { meta, MODELS } from '../src/meta.js';
+import { completeJSON, PROVIDERS } from '../src/ai.js';
 
 const SAMPLE_COMMENTS = [
   'price koto?',
@@ -43,22 +44,43 @@ Return ONLY a JSON array, no markdown fences.
 Comments:
 ${SAMPLE_COMMENTS.map((c, i) => `${i + 1}. ${c}`).join('\n')}`;
 
-const started = Date.now();
-const res = await meta.chat.completions.create({
-  model: MODELS.spark,
-  messages: [{ role: 'user', content: prompt }],
-});
+const names = process.argv.slice(2).length ? process.argv.slice(2) : Object.keys(PROVIDERS);
+const results = {};
 
-const raw = res.choices[0].message.content.replace(/```json|```/g, '').trim();
-let rows;
-try {
-  rows = JSON.parse(raw);
-} catch {
-  console.error('Could not parse JSON. Raw output:\n', raw);
-  process.exit(1);
+for (const name of names) {
+  if (!PROVIDERS[name]?.client) { console.log(`\n[${name}] skipped: not configured (set BASETEN_API_KEY in .env)`); continue; }
+  try {
+    // fallback: false, so a Baseten failure shows up here instead of being hidden by the Meta fallback
+    const r = await completeJSON('comment_classification',
+      { messages: [{ role: 'user', content: prompt }] }, { provider: name, fallback: false });
+    results[name] = r;
+  } catch (err) {
+    console.error(`\n[${name}] FAILED:`, err.status ?? '', JSON.stringify(err.error ?? err.message));
+  }
 }
 
-console.table(rows.map(r => ({ comment: r.comment, intent: r.intent, size: r.size, color: r.color, english: r.english })));
-console.log(`\n${rows.length}/${SAMPLE_COMMENTS.length} classified in ${((Date.now() - started) / 1000).toFixed(1)}s`);
-console.log('Usage:', res.usage);
+const ran = Object.keys(results);
+if (!ran.length) process.exit(1);
+
+// Rows are matched by position: each model returns one object per comment, in order.
+console.table(SAMPLE_COMMENTS.map((comment, i) => {
+  const row = { comment };
+  for (const n of ran) { const x = results[n].data[i]; row[n] = x ? [x.intent, x.size, x.color].filter(Boolean).join(' / ') : '(missing)'; }
+  if (ran.length > 1) row.agree = results[ran[0]].data[i]?.intent === results[ran[1]].data[i]?.intent ? '' : 'DIFF';
+  return row;
+}));
+
+console.table(ran.map((n) => {
+  const r = results[n];
+  return {
+    provider: n, model: r.model, rows: `${r.data.length}/${SAMPLE_COMMENTS.length}`, seconds: (r.ms / 1000).toFixed(1),
+    prompt_tokens: r.usage?.prompt_tokens, completion_tokens: r.usage?.completion_tokens, total_tokens: r.usage?.total_tokens,
+    reasoning_tokens: r.usage?.completion_tokens_details?.reasoning_tokens ?? '',
+    reasoning_chars_dropped: r.reasoningChars,
+  };
+}));
+if (ran.length > 1) {
+  const diff = SAMPLE_COMMENTS.filter((_, i) => results[ran[0]].data[i]?.intent !== results[ran[1]].data[i]?.intent).length;
+  console.log(`Intent disagreements between ${ran[0]} and ${ran[1]}: ${diff}/${SAMPLE_COMMENTS.length}`);
+}
 console.log('\nCheck each row by hand. Aim for 18/20 correct before relying on it.');

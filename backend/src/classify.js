@@ -1,5 +1,6 @@
 import { db } from './db.js';
-import { bulkChat } from './meta.js';
+import { completeJSON } from './ai.js';
+import { hasAuthorColumns } from './schema.js';
 
 const BATCH_SIZE = 75; // 50–100 per request keeps the number of reasoning-heavy calls small
 
@@ -40,13 +41,20 @@ For each comment (an id and its text) return one object with:
 - color: the color the customer mentions in English (e.g. "red"), or "" if none
 Return one object per comment, in the same order.`;
 
-async function classifyBatch(comments) {
+export const BATCH = BATCH_SIZE;
+
+// The model request for a batch of comments; also used by the provider comparison script.
+export function classifyRequest(comments) {
   const input = comments.map((c) => `id: ${c.id}\ntext: ${c.message.slice(0, 500)}`).join('\n---\n');
-  const res = await bulkChat({
+  return {
     messages: [{ role: 'user', content: `${INSTRUCTIONS}\n\nComments:\n${input}` }],
     response_format: { type: 'json_schema', json_schema: { name: 'comment_intents', schema: SCHEMA } },
-  });
-  const { comments: out } = JSON.parse(res.choices[0].message.content);
+  };
+}
+const validAnswer = (d) => { if (!Array.isArray(d?.comments)) throw new Error('answer has no "comments" array'); };
+
+// Model answer -> rows for the comments table. Ids the model skipped or invented are dropped.
+export function classifiedRows(out, comments) {
   const byId = new Map(comments.map((c) => [c.id, c]));
   const seen = new Set();
   return out
@@ -55,6 +63,11 @@ async function classifyBatch(comments) {
       id: r.id, post_id: byId.get(r.id).post_id, intent: r.intent,
       size: r.size?.trim() || null, color: r.color?.trim() || null,
     }));
+}
+
+async function classifyBatch(comments) {
+  const { data } = await completeJSON('comment_classification', classifyRequest(comments), { validate: validAnswer });
+  return classifiedRows(data.comments, comments);
 }
 
 async function fetchAll(query) {
@@ -67,10 +80,16 @@ async function fetchAll(query) {
   }
 }
 
-// Comments with text and no intent yet. Empty comments (stickers, photos) cannot be classified.
-const unclassified = (pageId) => fetchAll(() =>
-  db.from('comments').select('id, post_id, message, posts!inner(page_id)')
-    .eq('posts.page_id', pageId).is('intent', null).not('message', 'is', null).neq('message', '').order('id'));
+// Comments with text and no intent yet. Empty comments (stickers, photos) cannot be classified,
+// and neither can the page's own replies: they are not customers.
+async function unclassified(pageId) {
+  const skipPage = await hasAuthorColumns();
+  return fetchAll(() => {
+    const q = db.from('comments').select('id, post_id, message, posts!inner(page_id)')
+      .eq('posts.page_id', pageId).is('intent', null).not('message', 'is', null).neq('message', '').order('id');
+    return skipPage ? q.eq('is_page', false) : q;
+  });
+}
 
 async function save(rows) {
   const { error } = await db.from('comments').upsert(rows);

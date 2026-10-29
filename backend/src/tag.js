@@ -1,6 +1,6 @@
 import { db } from './db.js';
 import sharp from 'sharp';
-import { meta, MODELS } from './meta.js';
+import { completeJSON } from './ai.js';
 
 const BATCH_SIZE = 20; // API allows 50 images per request; smaller keeps payloads and retries cheap
 
@@ -76,13 +76,11 @@ export async function tagBatch(allPosts) {
   }));
   const posts = loaded.filter(Boolean);
   if (!posts.length) return [];
-  const res = await meta.chat.completions.create({
-    model: MODELS.spark,
-    reasoning_effort: 'minimal', // lowest muse-spark-1.3 accepts; "none" returns 400
+  const { data } = await completeJSON('post_tagging', {
     messages: [{ role: 'user', content: buildContent(posts) }],
     response_format: { type: 'json_schema', json_schema: { name: 'post_tags', schema: SCHEMA } },
-  });
-  const { tags } = JSON.parse(res.choices[0].message.content);
+  }, { validate: (d) => { if (!Array.isArray(d?.tags)) throw new Error('answer has no "tags" array'); } });
+  const { tags } = data;
   const ids = new Set(posts.map((p) => p.id));
   const seen = new Set();
   return tags.filter((t) => ids.has(t.post_id) && !seen.has(t.post_id) && seen.add(t.post_id));

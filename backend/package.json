@@ -11,7 +11,8 @@
     "test:sam": "node tests/03-sam.js",
     "demo:export": "node scripts/demo-export.js",
     "demo:seed": "node scripts/demo-seed.js",
-    "demo:save-intents": "node scripts/demo-save-intents.js"
+    "test:compare": "node tests/05-compare-classification.js",
+    "demo:save-analysis": "node scripts/demo-save-analysis.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",
