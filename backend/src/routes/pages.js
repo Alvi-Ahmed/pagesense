@@ -5,6 +5,8 @@ import { startTagging, getTagStatus } from '../tag.js';
 import { DEMO_PAGE_ID } from '../demo.js';
 import { db } from '../db.js';
 import { startAnalysis, latestAnalysis } from '../analysis.js';
+import { latestPlaybook, setBoosted } from '../playbook.js';
+import { needsReply } from '../replies.js';
 
 const router = Router();
 
@@ -50,6 +52,37 @@ router.post('/:id/analysis', requireManager, handle((req) => startAnalysis(req.p
 router.get('/:id/analysis', async (req, res) => {
   try {
     res.json(await latestAnalysis(req.params.id));
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Cached playbook from the last analysis run: { status: 'none' } until one has finished.
+router.get('/:id/playbook', async (req, res) => {
+  try {
+    res.json(await latestPlaybook(req.params.id));
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// "Was this boosted?" toggle: boosted posts are excluded from the playbook, which is rebuilt before this returns.
+router.post('/:id/posts/:postId/boosted', requireManager, async (req, res) => {
+  try {
+    if (typeof req.body.boosted !== 'boolean') return res.status(400).json({ error: 'boosted must be true or false' });
+    res.json(await setBoosted(req.params.id, req.params.postId, req.body.boosted));
+  } catch (err) {
+    console.error(err.message);
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
+// Comments that need an answer, for Home.
+router.get('/:id/replies', async (req, res) => {
+  try {
+    res.json(await needsReply(req.params.id));
   } catch (err) {
     console.error(err.message);
     res.status(500).json({ error: err.message });

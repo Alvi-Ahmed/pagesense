@@ -1,9 +1,13 @@
 import { db } from './db.js';
 import { tagPage } from './tag.js';
+import { classifyPage } from './classify.js';
+import { buildPlaybook } from './playbook.js';
 
-// Pipeline stages run in order after a sync. Later items add classify, playbook, catalog, orders.
+// Pipeline stages run in order after a sync. Later items add catalog, orders.
 const STAGES = [
   { name: 'tagging', run: (pageId, p) => tagPage(pageId, p) },
+  { name: 'classifying', run: (pageId, p) => classifyPage(pageId, p) },
+  { name: 'playbook', run: (pageId, p) => buildPlaybook(pageId, p) },
 ];
 
 // What to log/store from a failed API call: the response body, not just "400 Bad Request".
@@ -20,14 +24,21 @@ async function runJob(job) {
   await update(job.id, { status: 'running', started_at: new Date().toISOString() });
   let failed = 0;
   try {
+    // processed/total run across all stages: each stage's counts are added to what earlier stages did.
+    let base = 0;
     for (const stage of STAGES) {
-      await update(job.id, { stage: stage.name, processed: 0, total: 0 });
+      await update(job.id, { stage: stage.name, ...(base === 0 && { processed: 0, total: 0 }) });
+      let stageTotal = 0;
       const result = await stage.run(job.page_id, {
         // called by a stage as it makes progress
-        progress: (processed, total) => update(job.id, { processed, total }),
+        progress: (processed, total) => {
+          stageTotal = total;
+          return update(job.id, { processed: base + processed, total: base + total });
+        },
       });
+      base += stageTotal;
       failed += result?.failed ?? 0;
-      if (result?.tagged === 0 && result?.failed > 0) {
+      if ((result?.tagged ?? result?.classified) === 0 && result?.failed > 0) {
         throw new Error(`${stage.name}: all ${result.failed} items failed. Check the server log for the cause.`);
       }
     }
