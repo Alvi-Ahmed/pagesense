@@ -77,14 +77,16 @@ function Replies({ pageId, ready, total }) {
           </li>
         ))}
       </ul>
-      <p className="text-xs text-muted">Complaints and orders come first. Replies you already sent are not tracked yet.</p>
+      <p className="text-xs text-muted">
+        Complaints and orders come first.{!replies.tracked && ' Replies you already sent are not tracked yet.'}
+      </p>
     </>
   )
 }
 
 export function Home() {
   const { session, summary, analysis, error, refresh } = useOutletContext()
-  const { playbook } = usePlaybook(session.page.id, analysis)
+  const { playbook } = usePlaybook(session, analysis)
 
   if (!summary) {
     return error

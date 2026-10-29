@@ -2,6 +2,7 @@ import { db } from './db.js';
 import { graph, paginate } from './facebook.js';
 import { startAnalysis } from './analysis.js';
 import { DEMO_PAGE_ID } from './demo.js';
+import { hasAuthorColumns } from './schema.js';
 
 // Score weights: shares and comments say more about buying intent than a reaction.
 export const engagementScore = ({ reactions, comments_count, shares }) =>
@@ -42,20 +43,47 @@ function toPostRow(pageId, p) {
   return row; // is_boosted is omitted so a sync never overwrites it
 }
 
-async function syncComments(postId, token, job) {
-  // intent/size/color are omitted so a re-sync keeps earlier classification
+// A comment is answered when the page itself replied to it: directly, or later in the same thread
+// (Facebook threads are two levels: replies all point at the top-level comment).
+export function markAnswered(rows) {
+  const pageReplies = rows.filter((r) => r.is_page && r.parent_id);
+  const repliedTo = new Set(pageReplies.map((r) => r.parent_id));
+  const lastReplyInThread = new Map();
+  for (const r of pageReplies) {
+    const prev = lastReplyInThread.get(r.parent_id);
+    if (!prev || r.created_time > prev) lastReplyInThread.set(r.parent_id, r.created_time);
+  }
+  return rows.map((r) => ({
+    ...r,
+    answered: !r.is_page && (repliedTo.has(r.id) || (!!r.parent_id && lastReplyInThread.get(r.parent_id) > r.created_time)),
+  }));
+}
+
+// Before migration 003 the new columns do not exist; drop them so the sync still works.
+async function withAuthorColumns(rows) {
+  if (await hasAuthorColumns()) return rows;
+  return rows.map(({ parent_id, is_page, answered, ...rest }) => rest); // eslint-disable-line no-unused-vars
+}
+
+async function syncComments(pageId, postId, token, job) {
+  // intent/size/color are omitted so a re-sync keeps earlier classification.
+  // filter=stream lists replies as rows of their own with parent{id}; from{id} is only returned for the page's own comments.
+  const rows = [];
   for await (const batch of paginate(`/${postId}/comments`, {
     access_token: token,
-    fields: 'id,message,created_time',
+    fields: 'id,message,created_time,from{id},parent{id}',
     filter: 'stream',
     limit: '100',
   })) {
-    await upsert('comments', batch.map((c) => ({
+    rows.push(...batch.map((c) => ({
       id: c.id, post_id: postId, message: c.message ?? null, created_time: c.created_time,
+      parent_id: c.parent?.id ?? null, is_page: c.from?.id === pageId,
     })));
     job.comments += batch.length;
     job.updatedAt = Date.now();
   }
+  // all replies of a post are in memory before answers are worked out, since a reply can land on a later page
+  await upsert('comments', await withAuthorColumns(markAnswered(rows)));
 }
 
 async function run(pageId, token, job) {
@@ -75,7 +103,7 @@ async function run(pageId, token, job) {
     job.commentsExpected += queue.reduce((n, r) => n + r.comments_count, 0);
     // Small worker pool: comment paging is the slow part and posts are independent.
     await Promise.all(Array.from({ length: COMMENT_CONCURRENCY }, async () => {
-      for (let row; (row = queue.shift());) await syncComments(row.id, token, job);
+      for (let row; (row = queue.shift());) await syncComments(pageId, row.id, token, job);
     }));
   }
 }

@@ -11739,5 +11739,1828 @@
    "color": null
   }
  ],
- "post_tags": []
+ "post_tags": [
+  {
+   "post_id": "demo_p1",
+   "product_type": "shirt",
+   "product_phrase": "pink and grey plaid flannel shirt",
+   "worn_or_flat": "worn",
+   "background": "indoor living room with sofa",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p10",
+   "product_type": "pajama top",
+   "product_phrase": "light green printed pajama shirt",
+   "worn_or_flat": "flat",
+   "background": "plain white surface",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p100",
+   "product_type": "flat shoes",
+   "product_phrase": "polka dot and leopard mary jane flats",
+   "worn_or_flat": "flat",
+   "background": "grey carpet with shopping bag",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p101",
+   "product_type": "t-shirt",
+   "product_phrase": "white oversized bear print t-shirt",
+   "worn_or_flat": "worn",
+   "background": "plain white wall",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p102",
+   "product_type": "t-shirt",
+   "product_phrase": "black oversized graphic t-shirt",
+   "worn_or_flat": "worn",
+   "background": "plain white wall",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p103",
+   "product_type": "sandals",
+   "product_phrase": "white woven toe-ring flat sandals",
+   "worn_or_flat": "flat",
+   "background": "beige carpet with black box",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p104",
+   "product_type": "t-shirt",
+   "product_phrase": "black vintage harry potter t-shirt",
+   "worn_or_flat": "flat",
+   "background": "plain white background",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p105",
+   "product_type": "scarf",
+   "product_phrase": "pink floral embroidered scarf",
+   "worn_or_flat": "flat",
+   "background": "white graphic background",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p106",
+   "product_type": "scarf",
+   "product_phrase": "pink silk floral embroidered scarf",
+   "worn_or_flat": "flat",
+   "background": "white faux fur with magazine",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p107",
+   "product_type": "none",
+   "product_phrase": "no product",
+   "worn_or_flat": "unknown",
+   "background": "plain light background",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p108",
+   "product_type": "clogs",
+   "product_phrase": "yellow black and white charm clogs",
+   "worn_or_flat": "flat",
+   "background": "white tissue paper background",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p109",
+   "product_type": "handbag",
+   "product_phrase": "leopard print chain shoulder bag",
+   "worn_or_flat": "worn",
+   "background": "dark indoor wall",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p11",
+   "product_type": "vest shirt set",
+   "product_phrase": "cream knit vest with striped shirt",
+   "worn_or_flat": "flat",
+   "background": "cluttered room with magazines",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p110",
+   "product_type": "cap",
+   "product_phrase": "blue denim focus print cap",
+   "worn_or_flat": "flat",
+   "background": "plain white surface",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p111",
+   "product_type": "heels",
+   "product_phrase": "light pink floral bow heels",
+   "worn_or_flat": "worn",
+   "background": "plain beige floor",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p112",
+   "product_type": "tote bag",
+   "product_phrase": "red suede studded shoulder tote",
+   "worn_or_flat": "worn",
+   "background": "indoor hallway shelf",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p113",
+   "product_type": "slippers",
+   "product_phrase": "pastel bow lace flat slippers",
+   "worn_or_flat": "flat",
+   "background": "white bed with window blinds",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p114",
+   "product_type": "tote bag",
+   "product_phrase": "pastel bow tote bags",
+   "worn_or_flat": "unknown",
+   "background": "plain white wall with rack",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p115",
+   "product_type": "handbag",
+   "product_phrase": "brown checkered structured handbag",
+   "worn_or_flat": "flat",
+   "background": "white chair by window blinds",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p116",
+   "product_type": "tote bag",
+   "product_phrase": "cherry red suede tote bag",
+   "worn_or_flat": "flat",
+   "background": "windowsill by window blinds",
+   "price_shown": false,
+   "offer_type": "other"
+  },
+  {
+   "post_id": "demo_p117",
+   "product_type": "clogs",
+   "product_phrase": "black platform clogs with charms",
+   "worn_or_flat": "flat",
+   "background": "white tissue paper",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p118",
+   "product_type": "handbag",
+   "product_phrase": "beige shoulder party bag",
+   "worn_or_flat": "worn",
+   "background": "indoor room with decor",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p119",
+   "product_type": "sandals",
+   "product_phrase": "cream low-heeled toe-ring sandals",
+   "worn_or_flat": "flat",
+   "background": "white tissue in box",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p12",
+   "product_type": "sneakers",
+   "product_phrase": "blue and yellow men's sneakers",
+   "worn_or_flat": "worn",
+   "background": "dark studio backdrop",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p120",
+   "product_type": "none",
+   "product_phrase": "no product",
+   "worn_or_flat": "unknown",
+   "background": "cream graphic background",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p121",
+   "product_type": "sneakers",
+   "product_phrase": "white and light blue chunky sneakers",
+   "worn_or_flat": "flat",
+   "background": "shoe box on floor",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p122",
+   "product_type": "sneakers",
+   "product_phrase": "white black and blue men's sneakers",
+   "worn_or_flat": "worn",
+   "background": "outdoor paved sidewalk",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p123",
+   "product_type": "sneakers",
+   "product_phrase": "yellow high-top cartoon sneakers",
+   "worn_or_flat": "flat",
+   "background": "wooden floor indoors",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p124",
+   "product_type": "umbrella",
+   "product_phrase": "folded floral print umbrellas",
+   "worn_or_flat": "flat",
+   "background": "plain white table",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p125",
+   "product_type": "shirt",
+   "product_phrase": "cream floral short-sleeve shirt",
+   "worn_or_flat": "worn",
+   "background": "plain brown wall",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p126",
+   "product_type": "sneakers",
+   "product_phrase": "purple high-top canvas sneaker",
+   "worn_or_flat": "worn",
+   "background": "white wall with notes",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p127",
+   "product_type": "heels",
+   "product_phrase": "beige slingback block heels",
+   "worn_or_flat": "worn",
+   "background": "dark tabletop",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p128",
+   "product_type": "sneakers",
+   "product_phrase": "white and maroon lace-up sneakers",
+   "worn_or_flat": "flat",
+   "background": "white bedsheet with phone",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p129",
+   "product_type": "sneakers",
+   "product_phrase": "pink canvas platform sneakers",
+   "worn_or_flat": "flat",
+   "background": "outdoor grass with cloth",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p13",
+   "product_type": "boots",
+   "product_phrase": "tan men's lace-up boots",
+   "worn_or_flat": "worn",
+   "background": "dark indoor studio",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p130",
+   "product_type": "boots",
+   "product_phrase": "beige suede ankle boots",
+   "worn_or_flat": "worn",
+   "background": "outdoor stone pavement",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p131",
+   "product_type": "heels",
+   "product_phrase": "satin jeweled buckle mules",
+   "worn_or_flat": "worn",
+   "background": "plain beige wall",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p132",
+   "product_type": "heels",
+   "product_phrase": "royal blue patent stilettos",
+   "worn_or_flat": "flat",
+   "background": "white box interior",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p133",
+   "product_type": "hoodie",
+   "product_phrase": "white Nike logo hoodie",
+   "worn_or_flat": "flat",
+   "background": "white brick wall",
+   "price_shown": true,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p134",
+   "product_type": "heels",
+   "product_phrase": "black mesh bow heels",
+   "worn_or_flat": "worn",
+   "background": "dark gray wall",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p135",
+   "product_type": "boots",
+   "product_phrase": "grey high-top winter boot",
+   "worn_or_flat": "unknown",
+   "background": "dark gradient studio",
+   "price_shown": true,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p136",
+   "product_type": "sandals",
+   "product_phrase": "pink charm-decorated crocs sandal",
+   "worn_or_flat": "worn",
+   "background": "wicker basket",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p137",
+   "product_type": "handbag",
+   "product_phrase": "maroon handbag",
+   "worn_or_flat": "worn",
+   "background": "graphic collage background",
+   "price_shown": false,
+   "offer_type": "other"
+  },
+  {
+   "post_id": "demo_p138",
+   "product_type": "sneakers",
+   "product_phrase": "maroon high-top canvas sneaker",
+   "worn_or_flat": "worn",
+   "background": "dark studio",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p139",
+   "product_type": "sneakers",
+   "product_phrase": "white cartoon-print high-top sneaker",
+   "worn_or_flat": "unknown",
+   "background": "clear blue sky",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p14",
+   "product_type": "sneakers",
+   "product_phrase": "red plaid-trim platform sneaker",
+   "worn_or_flat": "flat",
+   "background": "wooden table indoors",
+   "price_shown": false,
+   "offer_type": "clearance"
+  },
+  {
+   "post_id": "demo_p140",
+   "product_type": "sneakers",
+   "product_phrase": "black and white cartoon-print sneaker",
+   "worn_or_flat": "flat",
+   "background": "white fabric with flowers",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p141",
+   "product_type": "umbrella",
+   "product_phrase": "starry cat-print folding umbrella",
+   "worn_or_flat": "flat",
+   "background": "white bedroom interior",
+   "price_shown": false,
+   "offer_type": "new_arrival"
+  },
+  {
+   "post_id": "demo_p142",
+   "product_type": "sneakers",
+   "product_phrase": "turquoise donut-print lace-up sneaker",
+   "worn_or_flat": "flat",
+   "background": "blue fabric",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p143",
+   "product_type": "handbag",
+   "product_phrase": "two-tone brown crossbody satchel",
+   "worn_or_flat": "flat",
+   "background": "white fabric with magazine",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p144",
+   "product_type": "slippers",
+   "product_phrase": "white bow slide slipper",
+   "worn_or_flat": "flat",
+   "background": "white sheet with mirror",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p145",
+   "product_type": "sneakers",
+   "product_phrase": "white lace-up platform sneaker",
+   "worn_or_flat": "flat",
+   "background": "white wall with wooden table",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p146",
+   "product_type": "sneakers",
+   "product_phrase": "purple high-top canvas sneaker",
+   "worn_or_flat": "worn",
+   "background": "dark fabric",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p147",
+   "product_type": "sneakers",
+   "product_phrase": "patchwork multicolor lace-up sneaker",
+   "worn_or_flat": "flat",
+   "background": "grey fabric with book",
+   "price_shown": false,
+   "offer_type": "clearance"
+  },
+  {
+   "post_id": "demo_p148",
+   "product_type": "heels",
+   "product_phrase": "beige slingback block-heel shoe",
+   "worn_or_flat": "flat",
+   "background": "black table with magazine",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p149",
+   "product_type": "sneakers",
+   "product_phrase": "black high-top canvas sneaker",
+   "worn_or_flat": "unknown",
+   "background": "outdoor blue sky",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p15",
+   "product_type": "bottle",
+   "product_phrase": "patterned stainless steel water flask",
+   "worn_or_flat": "flat",
+   "background": "black surface",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p150",
+   "product_type": "sneakers",
+   "product_phrase": "yellow pokemon-print high-top sneaker",
+   "worn_or_flat": "flat",
+   "background": "wooden floor indoors",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p16",
+   "product_type": "sneakers",
+   "product_phrase": "black pointed wedge sneaker",
+   "worn_or_flat": "flat",
+   "background": "glass shelf indoors",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p17",
+   "product_type": "sandals",
+   "product_phrase": "beige blue-gem flip-flop sandal",
+   "worn_or_flat": "unknown",
+   "background": "dark wall interior",
+   "price_shown": false,
+   "offer_type": "other"
+  },
+  {
+   "post_id": "demo_p18",
+   "product_type": "sandals",
+   "product_phrase": "black gemstone wedge sandals",
+   "worn_or_flat": "worn",
+   "background": "outdoor pavement",
+   "price_shown": false,
+   "offer_type": "other"
+  },
+  {
+   "post_id": "demo_p19",
+   "product_type": "sandals",
+   "product_phrase": "green rhinestone slide sandal",
+   "worn_or_flat": "flat",
+   "background": "plain white background",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p2",
+   "product_type": "sweater",
+   "product_phrase": "light pink knit sweater",
+   "worn_or_flat": "worn",
+   "background": "indoor room",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p20",
+   "product_type": "heels",
+   "product_phrase": "brown microfiber leather heels",
+   "worn_or_flat": "unknown",
+   "background": "wooden table",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p21",
+   "product_type": "sandals",
+   "product_phrase": "assorted glitter slide sandals",
+   "worn_or_flat": "worn",
+   "background": "indoor floor",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p22",
+   "product_type": "sneakers",
+   "product_phrase": "brown leopard print sneakers",
+   "worn_or_flat": "flat",
+   "background": "white textured fabric",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p23",
+   "product_type": "sandals",
+   "product_phrase": "assorted glitter slide sandals",
+   "worn_or_flat": "worn",
+   "background": "indoor floor",
+   "price_shown": false,
+   "offer_type": "other"
+  },
+  {
+   "post_id": "demo_p24",
+   "product_type": "skirt",
+   "product_phrase": "green floral maxi skirt",
+   "worn_or_flat": "flat",
+   "background": "plain beige wall",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p25",
+   "product_type": "sneakers",
+   "product_phrase": "brown retro casual sneakers",
+   "worn_or_flat": "flat",
+   "background": "beige carpet",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p26",
+   "product_type": "sneakers",
+   "product_phrase": "green canvas high-top sneakers",
+   "worn_or_flat": "flat",
+   "background": "wooden floor",
+   "price_shown": false,
+   "offer_type": "clearance"
+  },
+  {
+   "post_id": "demo_p27",
+   "product_type": "sneakers",
+   "product_phrase": "orange canvas high-top sneakers",
+   "worn_or_flat": "flat",
+   "background": "wooden floor",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p28",
+   "product_type": "sneakers",
+   "product_phrase": "grey canvas low-top sneaker",
+   "worn_or_flat": "unknown",
+   "background": "wooden floor",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p29",
+   "product_type": "crossbody bag",
+   "product_phrase": "pink floral crossbody bag",
+   "worn_or_flat": "flat",
+   "background": "plain white surface",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p3",
+   "product_type": "boots",
+   "product_phrase": "beige suede ankle boots",
+   "worn_or_flat": "worn",
+   "background": "indoor gray floor",
+   "price_shown": false,
+   "offer_type": "other"
+  },
+  {
+   "post_id": "demo_p30",
+   "product_type": "crossbody bag",
+   "product_phrase": "pink floral side bag",
+   "worn_or_flat": "flat",
+   "background": "plain light surface",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p31",
+   "product_type": "none",
+   "product_phrase": "no product visible",
+   "worn_or_flat": "unknown",
+   "background": "black screen with text",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p32",
+   "product_type": "jeans",
+   "product_phrase": "grey floral print wide-leg jeans",
+   "worn_or_flat": "flat",
+   "background": "black leather couch",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p33",
+   "product_type": "crossbody bag",
+   "product_phrase": "pink floral crossbody bag",
+   "worn_or_flat": "flat",
+   "background": "indoor table with lamp",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p34",
+   "product_type": "t-shirt",
+   "product_phrase": "maroon oversized t-shirt",
+   "worn_or_flat": "flat",
+   "background": "plain surface",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p35",
+   "product_type": "t-shirt",
+   "product_phrase": "maroon oversized t-shirt",
+   "worn_or_flat": "flat",
+   "background": "office interior with chair",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p36",
+   "product_type": "scarf",
+   "product_phrase": "cream pink floral scarf",
+   "worn_or_flat": "worn",
+   "background": "plain gray wall",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p37",
+   "product_type": "handbag",
+   "product_phrase": "woven olive green handbag",
+   "worn_or_flat": "flat",
+   "background": "collage indoor backgrounds",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p38",
+   "product_type": "sneakers",
+   "product_phrase": "white velcro sneakers with navy stripes",
+   "worn_or_flat": "flat",
+   "background": "inside white shoe box",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p39",
+   "product_type": "sneakers",
+   "product_phrase": "cream sneakers with green stripes",
+   "worn_or_flat": "flat",
+   "background": "plain white wall and gray fabric",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p4",
+   "product_type": "slippers",
+   "product_phrase": "beige furry loafer slippers",
+   "worn_or_flat": "worn",
+   "background": "beige carpet floor",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p40",
+   "product_type": "co-ord set",
+   "product_phrase": "white shirt and pants co-ord set",
+   "worn_or_flat": "flat",
+   "background": "gray carpet with white roses",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p41",
+   "product_type": "organizer",
+   "product_phrase": "dark brown wooden corner organizer",
+   "worn_or_flat": "flat",
+   "background": "kitchen countertop",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p42",
+   "product_type": "heels",
+   "product_phrase": "green mary jane heels with bow straps",
+   "worn_or_flat": "flat",
+   "background": "inside white shoe box",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p43",
+   "product_type": "dress",
+   "product_phrase": "pink fringed batwing abaya dress",
+   "worn_or_flat": "worn",
+   "background": "outdoor patio with plants",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p44",
+   "product_type": "sneakers",
+   "product_phrase": "white velcro strap mary jane sneakers",
+   "worn_or_flat": "flat",
+   "background": "dark table with mirror",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p45",
+   "product_type": "tote bag",
+   "product_phrase": "brown tote bag with cat print",
+   "worn_or_flat": "worn",
+   "background": "plain white background",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p46",
+   "product_type": "tote bag",
+   "product_phrase": "pink leopard print canvas tote bag",
+   "worn_or_flat": "flat",
+   "background": "plain wall and leather couch",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p47",
+   "product_type": "heels",
+   "product_phrase": "red bow slingback heeled shoes",
+   "worn_or_flat": "flat",
+   "background": "plain beige background",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p48",
+   "product_type": "handbag",
+   "product_phrase": "white faux fur shoulder bag",
+   "worn_or_flat": "worn",
+   "background": "indoor white wall",
+   "price_shown": false,
+   "offer_type": "combo"
+  },
+  {
+   "post_id": "demo_p49",
+   "product_type": "bag set",
+   "product_phrase": "brown faux fur bag and hat set",
+   "worn_or_flat": "flat",
+   "background": "plain white wall and table",
+   "price_shown": false,
+   "offer_type": "combo"
+  },
+  {
+   "post_id": "demo_p5",
+   "product_type": "blazer",
+   "product_phrase": "brown herringbone double-breasted blazer",
+   "worn_or_flat": "flat",
+   "background": "white couch surface",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p50",
+   "product_type": "handbag",
+   "product_phrase": "brown leopard print chain shoulder bag",
+   "worn_or_flat": "flat",
+   "background": "wooden table with white wall",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p51",
+   "product_type": "sneakers",
+   "product_phrase": "white sneakers with black and pink accents",
+   "worn_or_flat": "flat",
+   "background": "white bedding with boxes",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p52",
+   "product_type": "shoes",
+   "product_phrase": "beige mesh mary jane cloth shoes",
+   "worn_or_flat": "flat",
+   "background": "peach surface with books",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p53",
+   "product_type": "flip-flops",
+   "product_phrase": "brown wedge heeled flip-flops",
+   "worn_or_flat": "flat",
+   "background": "black table indoors",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p54",
+   "product_type": "heels",
+   "product_phrase": "pink wedge heel shoes",
+   "worn_or_flat": "worn",
+   "background": "light carpeted indoor floor",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p55",
+   "product_type": "sneakers",
+   "product_phrase": "white platform sneakers with brown stripes",
+   "worn_or_flat": "flat",
+   "background": "indoor with cardboard boxes",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p56",
+   "product_type": "sneakers",
+   "product_phrase": "black and white woven sneakers",
+   "worn_or_flat": "flat",
+   "background": "dark table indoors",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p57",
+   "product_type": "cardigan",
+   "product_phrase": "pink leopard print knit cardigan",
+   "worn_or_flat": "worn",
+   "background": "bedroom with white bed",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p58",
+   "product_type": "shirt",
+   "product_phrase": "beige short sleeve shirt with leopard print",
+   "worn_or_flat": "flat",
+   "background": "plain white background",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p59",
+   "product_type": "flats",
+   "product_phrase": "lace ballet flat shoes in three colors",
+   "worn_or_flat": "flat",
+   "background": "plain gray floor",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p6",
+   "product_type": "shawl",
+   "product_phrase": "patterned fringed winter shawls",
+   "worn_or_flat": "flat",
+   "background": "indoor near white door",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p60",
+   "product_type": "heels",
+   "product_phrase": "mint green floral low heel mules",
+   "worn_or_flat": "flat",
+   "background": "wooden floor indoors",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p61",
+   "product_type": "sneakers",
+   "product_phrase": "white chunky sneakers with black and maroon accents",
+   "worn_or_flat": "worn",
+   "background": "indoor black bench",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p62",
+   "product_type": "shoes",
+   "product_phrase": "beige knit casual men's shoes",
+   "worn_or_flat": "flat",
+   "background": "gray studio background",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p63",
+   "product_type": "heels",
+   "product_phrase": "pointed block heel shoes with crystal buckle",
+   "worn_or_flat": "flat",
+   "background": "beige floor surface",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p64",
+   "product_type": "tray",
+   "product_phrase": "white ceramic lady jewelry storage tray",
+   "worn_or_flat": "flat",
+   "background": "wooden vanity table",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p65",
+   "product_type": "flats",
+   "product_phrase": "white pointed slingback flat shoes with buckles",
+   "worn_or_flat": "flat",
+   "background": "black surface with jeans and cap",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p66",
+   "product_type": "none",
+   "product_phrase": "no visible product",
+   "worn_or_flat": "unknown",
+   "background": "balcony with potted plants",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p67",
+   "product_type": "sandals",
+   "product_phrase": "black pointed flat mule sandals",
+   "worn_or_flat": "flat",
+   "background": "white bag surface indoors",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p68",
+   "product_type": "sneakers",
+   "product_phrase": "white cartoon print platform sneakers",
+   "worn_or_flat": "flat",
+   "background": "wooden floor indoors",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p69",
+   "product_type": "heels",
+   "product_phrase": "brown pointed slingback heel mules",
+   "worn_or_flat": "flat",
+   "background": "indoor with shopping bag and box",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p7",
+   "product_type": "jacket",
+   "product_phrase": "gray short winter jacket with black trim",
+   "worn_or_flat": "flat",
+   "background": "indoor table with magazines",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p70",
+   "product_type": "sandals",
+   "product_phrase": "white pointed low heel mule sandals",
+   "worn_or_flat": "flat",
+   "background": "black table with sheer fabric",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p71",
+   "product_type": "shoes",
+   "product_phrase": "light blue polka dot buckle platform shoes",
+   "worn_or_flat": "flat",
+   "background": "white fabric with denim",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p72",
+   "product_type": "hair clip",
+   "product_phrase": "white cherry jeweled hair clips set",
+   "worn_or_flat": "flat",
+   "background": "textured fabric and white dish",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p73",
+   "product_type": "heels",
+   "product_phrase": "black satin rose slingback flat",
+   "worn_or_flat": "flat",
+   "background": "plain beige surface",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p74",
+   "product_type": "heels",
+   "product_phrase": "brown pointed mary jane heels",
+   "worn_or_flat": "flat",
+   "background": "shoebox with shopping bag",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p75",
+   "product_type": "none",
+   "product_phrase": "no product",
+   "worn_or_flat": "unknown",
+   "background": "photo collage background",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p76",
+   "product_type": "heels",
+   "product_phrase": "black pointed strap mule heels",
+   "worn_or_flat": "flat",
+   "background": "white bag on luggage",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p77",
+   "product_type": "heels",
+   "product_phrase": "black pointed strap mule heels",
+   "worn_or_flat": "flat",
+   "background": "white bag on luggage",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p78",
+   "product_type": "sneakers",
+   "product_phrase": "black canvas backless sneakers",
+   "worn_or_flat": "flat",
+   "background": "dark surface with magazine",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p79",
+   "product_type": "sneakers",
+   "product_phrase": "white and light blue mary jane sneakers",
+   "worn_or_flat": "worn",
+   "background": "beige carpeted floor",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p8",
+   "product_type": "heels",
+   "product_phrase": "brown block heel platform sandals",
+   "worn_or_flat": "flat",
+   "background": "indoor table with shoebox",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p80",
+   "product_type": "sneakers",
+   "product_phrase": "white high-top canvas sneakers",
+   "worn_or_flat": "flat",
+   "background": "inside shoebox",
+   "price_shown": true,
+   "offer_type": "clearance"
+  },
+  {
+   "post_id": "demo_p81",
+   "product_type": "sneakers",
+   "product_phrase": "light blue suede sneakers",
+   "worn_or_flat": "flat",
+   "background": "white bedding with shoebox",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p82",
+   "product_type": "belt",
+   "product_phrase": "black floral embroidered leather belt",
+   "worn_or_flat": "flat",
+   "background": "plain white background",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p83",
+   "product_type": "handbag",
+   "product_phrase": "black textured shoulder handbag",
+   "worn_or_flat": "flat",
+   "background": "white bedding",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p84",
+   "product_type": "highlighter",
+   "product_phrase": "glitter shimmer spray highlighter bottles",
+   "worn_or_flat": "flat",
+   "background": "dark plain wall",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p85",
+   "product_type": "handbag",
+   "product_phrase": "dark brown structured handbag",
+   "worn_or_flat": "worn",
+   "background": "indoor room with cabinet",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p86",
+   "product_type": "handbag",
+   "product_phrase": "cream tasseled shoulder handbag",
+   "worn_or_flat": "flat",
+   "background": "bedroom floor and bed",
+   "price_shown": false,
+   "offer_type": "new_arrival"
+  },
+  {
+   "post_id": "demo_p87",
+   "product_type": "earrings",
+   "product_phrase": "floral enamel stud earrings set",
+   "worn_or_flat": "flat",
+   "background": "plain beige background",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p88",
+   "product_type": "bangle",
+   "product_phrase": "amber acetate square bangle",
+   "worn_or_flat": "flat",
+   "background": "beige fabric table",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p89",
+   "product_type": "heels",
+   "product_phrase": "beige woven slingback low heels",
+   "worn_or_flat": "flat",
+   "background": "brown carpeted floor",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p9",
+   "product_type": "formal shoes",
+   "product_phrase": "black leather mens oxford shoes",
+   "worn_or_flat": "worn",
+   "background": "indoor showroom lobby",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p90",
+   "product_type": "earrings",
+   "product_phrase": "blue heart stud earrings",
+   "worn_or_flat": "flat",
+   "background": "beige fabric",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p91",
+   "product_type": "clogs",
+   "product_phrase": "white and pink platform clogs",
+   "worn_or_flat": "worn",
+   "background": "outdoor grass",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p92",
+   "product_type": "earrings",
+   "product_phrase": "pearl and red statement earrings",
+   "worn_or_flat": "flat",
+   "background": "beige satin fabric",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p93",
+   "product_type": "sneakers",
+   "product_phrase": "brown and beige platform sneakers",
+   "worn_or_flat": "worn",
+   "background": "brown carpet",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p94",
+   "product_type": "sandals",
+   "product_phrase": "colorful wedge flip-flop sandals",
+   "worn_or_flat": "unknown",
+   "background": "plain white wall",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p95",
+   "product_type": "heels",
+   "product_phrase": "black strappy block heels",
+   "worn_or_flat": "worn",
+   "background": "plain beige wall",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p96",
+   "product_type": "flats",
+   "product_phrase": "red mary jane flat shoes",
+   "worn_or_flat": "flat",
+   "background": "wooden desk with laptop",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p97",
+   "product_type": "sandals",
+   "product_phrase": "beige pearl slide sandals",
+   "worn_or_flat": "flat",
+   "background": "white bedding with lamp",
+   "price_shown": false,
+   "offer_type": "none"
+  },
+  {
+   "post_id": "demo_p98",
+   "product_type": "sandals",
+   "product_phrase": "light blue strappy block sandals",
+   "worn_or_flat": "flat",
+   "background": "white fabric with jeans",
+   "price_shown": false,
+   "offer_type": "discount"
+  },
+  {
+   "post_id": "demo_p99",
+   "product_type": "sandals",
+   "product_phrase": "green strappy flat sandals",
+   "worn_or_flat": "flat",
+   "background": "white bedsheet with book",
+   "price_shown": false,
+   "offer_type": "none"
+  }
+ ],
+ "playbook": {
+  "data": {
+   "basis": {
+    "posts": 150,
+    "boosted_excluded": 0,
+    "median_engagement": 6,
+    "avg_buyer_comments": 3.6
+   },
+   "price": {
+    "shown": {
+     "posts": 3,
+     "median_engagement": 785,
+     "engagement_vs_page_pct": 12983
+    },
+    "enough": true,
+    "not_shown": {
+     "posts": 147,
+     "median_engagement": 6,
+     "engagement_vs_page_pct": 0
+    },
+    "share_pct": 45,
+    "question_comments": 503,
+    "classified_comments": 1115
+   },
+   "ranked": [
+    {
+     "label": "Time posted",
+     "posts": 11,
+     "value": "night",
+     "dimension": "time_of_day",
+     "rank_score": 347.7,
+     "vs_typical": "105.8 times the typical post",
+     "median_engagement": 635,
+     "avg_buyer_comments": 8.1,
+     "engagement_vs_page_pct": 10483,
+     "buyer_comments_vs_page_pct": 127
+    },
+    {
+     "label": "Offer",
+     "posts": 49,
+     "value": "discount",
+     "dimension": "offer_type",
+     "rank_score": 8.2,
+     "vs_typical": "117% above typical",
+     "median_engagement": 13,
+     "avg_buyer_comments": 7.2,
+     "engagement_vs_page_pct": 117,
+     "buyer_comments_vs_page_pct": 101
+    },
+    {
+     "label": "Day posted",
+     "posts": 31,
+     "value": "Sunday",
+     "dimension": "weekday",
+     "rank_score": 0.9,
+     "vs_typical": "17% above typical",
+     "median_engagement": 7,
+     "avg_buyer_comments": 3.7,
+     "engagement_vs_page_pct": 17,
+     "buyer_comments_vs_page_pct": 5
+    },
+    {
+     "label": "Day posted",
+     "posts": 26,
+     "value": "Tuesday",
+     "dimension": "weekday",
+     "rank_score": 0.4,
+     "vs_typical": "8% above typical",
+     "median_engagement": 6.5,
+     "avg_buyer_comments": 3.3,
+     "engagement_vs_page_pct": 8,
+     "buyer_comments_vs_page_pct": -6
+    },
+    {
+     "label": "Day posted",
+     "posts": 20,
+     "value": "Saturday",
+     "dimension": "weekday",
+     "rank_score": 0.4,
+     "vs_typical": "8% above typical",
+     "median_engagement": 6.5,
+     "avg_buyer_comments": 2.8,
+     "engagement_vs_page_pct": 8,
+     "buyer_comments_vs_page_pct": -23
+    },
+    {
+     "label": "Worn or flat photo",
+     "posts": 98,
+     "value": "flat",
+     "dimension": "worn_or_flat",
+     "rank_score": 0,
+     "vs_typical": "0% above typical",
+     "median_engagement": 6,
+     "avg_buyer_comments": 3.1,
+     "engagement_vs_page_pct": 0,
+     "buyer_comments_vs_page_pct": -12
+    },
+    {
+     "label": "Price in post",
+     "posts": 147,
+     "value": "no price",
+     "dimension": "price_shown",
+     "rank_score": 0,
+     "vs_typical": "0% above typical",
+     "median_engagement": 6,
+     "avg_buyer_comments": 3.6,
+     "engagement_vs_page_pct": 0,
+     "buyer_comments_vs_page_pct": 0
+    },
+    {
+     "label": "Day posted",
+     "posts": 23,
+     "value": "Monday",
+     "dimension": "weekday",
+     "rank_score": 0,
+     "vs_typical": "0% above typical",
+     "median_engagement": 6,
+     "avg_buyer_comments": 4.6,
+     "engagement_vs_page_pct": 0,
+     "buyer_comments_vs_page_pct": 28
+    }
+   ],
+   "intents": {
+    "other": 543,
+    "praise": 10,
+    "complaint": 3,
+    "interested": 16,
+    "negotiation": 2,
+    "order_intent": 10,
+    "price_question": 503,
+    "product_question": 8,
+    "stock_or_restock": 10,
+    "delivery_question": 5,
+    "size_or_color_request": 5
+   },
+   "strongest": {
+    "label": "Time posted",
+    "posts": 11,
+    "value": "night",
+    "dimension": "time_of_day",
+    "rank_score": 347.7,
+    "vs_typical": "105.8 times the typical post",
+    "median_engagement": 635,
+    "avg_buyer_comments": 8.1,
+    "engagement_vs_page_pct": 10483,
+    "buyer_comments_vs_page_pct": 127
+   },
+   "top_posts": [
+    {
+     "id": "demo_p121",
+     "caption": "Ladies Keds\nAvailable for pre-order\nSize-35-39\nInbox for price and details",
+     "photo_url": "https://scontent.fsgn5-9.fna.fbcdn.net/v/t1.6435-9/135722056_493078418754519_8943012664133803158_n.jpg?stp=dst-jpg_s720x720_tt6&_nc_cat=109&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=f727a1&_nc_eui2=AeHMRweGyY7HW9fe3IogZGk4gstLJmfLxQaCy0smZ8vFBkX292lrpZWE5eRXcfsDx0YHV_NCQY04ZcQAn28FHWf5&_nc_ohc=_S4ajn3X578Q7kNvwEJGz9X&_nc_oc=AdpzOTxICdWq1yig7_VGfxgVtyYJb2g3Cuw7ndqlrhXHf7gElQbCJO1sNoz1zTdW5Gg&_nc_zt=23&_nc_ht=scontent.fsgn5-9.fna&edm=AKIiGfEEAAAA&_nc_gid=LKnvPL2BFEpd0Og0J79ybA&_nc_tpa=Q5bMBQJDTiB-QBbqzHr0iQD4P1iBjGSqILTEc1LpwWuWvNiT_c8VgfxA_7bj48XOHk2-tnZ6r5g2BIsamw&oh=00_AQTxywvRN4pNzS30z8sVpPNFGB_90sqjUAUbScKfb2DaFg&oe=6B09F836",
+     "is_boosted": false,
+     "buyer_comments": 23,
+     "engagement_score": 1882
+    },
+    {
+     "id": "demo_p122",
+     "caption": "The last collection for winter is here on your New Year !! 🤩\n💯 Jackets-Shoes-Boots-Bags-Cosmetics-Fashion kits-EVERYTHING YOU NEED <3\n✈ We have a special shipment on 11th January.. place your orders",
+     "photo_url": "https://scontent.fsgn5-22.fna.fbcdn.net/v/t1.6435-9/81186830_181833716545659_5080019414275850240_n.jpg?stp=dst-jpg_s720x720_tt6&_nc_cat=105&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=127cfc&_nc_eui2=AeEGApo2TzapFcwnPKg858QsogAaDDPTIxmiABoMM9MjGeJUhi8QxMO_XM_UscrlUbK9gmaj6zCaPLWOdkCLgGXW&_nc_ohc=tQshRLM7FRYQ7kNvwGzPUUy&_nc_oc=Adpt_Va_0NXivV0D2JymeDyOUuPSoa1GKWzSr-qj0PY0uRvu2wMc0i2I0sQ2asfsowM&_nc_zt=23&_nc_ht=scontent.fsgn5-22.fna&edm=AKIiGfEEAAAA&_nc_gid=uue8wWn4DBJi12XoqilxRA&_nc_tpa=Q5bMBQJwrIQfYo6QN8gmHjcgW-zsYOAB6qw1J13bheV-sm-TKmfL4tURoHQQIUqSHLrZcT1W13HozFIKDg&oh=00_AQQSyQ4IeRVG5EDD2Rv7ZzlqMfNFT4J99XaS32-wrRAoIw&oe=6B09DA90",
+     "is_boosted": false,
+     "buyer_comments": 1,
+     "engagement_score": 1334
+    },
+    {
+     "id": "demo_p123",
+     "caption": "Be comfy ~ Be stylish \nSneakers on 15% flat sale!!\nAvailable size:35-40\nInbox for Price and Details \nPre-ordered\n\nDelivery within: December\nShop now 🛍 \nHappy shopping with Mega Genie ❤️\n*Terms and Co",
+     "photo_url": "https://scontent.fsgn5-21.fna.fbcdn.net/v/t1.6435-9/124206171_436311007764594_403425380099135535_n.jpg?stp=dst-jpg_s720x720_tt6&_nc_cat=108&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=127cfc&_nc_eui2=AeH74sK-yP3xsCzZm1F3ZIBqXgr4rrAX0N1eCviusBfQ3TDKUDln1SE96I6WPuUEO7ZiwZrlesjcyzesghbCKH2l&_nc_ohc=DP6tS3vYB0AQ7kNvwHdkvyM&_nc_oc=AdpubF_D_ixtl1qEUsRM83fqAVv0whXOrmobPVkpeNqpIdVt7wXmq9HQgSO0MvDIqsM&_nc_zt=23&_nc_ht=scontent.fsgn5-21.fna&edm=AKIiGfEEAAAA&_nc_gid=J4AAENV1kk7M19hAAiPKlA&_nc_tpa=Q5bMBQIfwjFwAxgg1aMPQIAEz-x_GYTmbqICPqLp404whKYoQOpIQyWN4GNl-6GdIERSoiC6preQLN5XZA&oh=00_AQTAwHrrh44tlwAU3VVNPHvWPm7kI0J4Sha4n4gw2nWitA&oe=6B09EDFD",
+     "is_boosted": false,
+     "buyer_comments": 18,
+     "engagement_score": 1304
+    },
+    {
+     "id": "demo_p124",
+     "caption": "Get these beautiful umbrellas on Sale Price ♥️\nVery limited pieces available for preorder \nLast date for order is july 11\nInbox for details 🌼🌼\n\n:colors may slightly vary depending on photographic qu",
+     "photo_url": "https://scontent.fsgn5-22.fna.fbcdn.net/v/t39.30808-6/517405339_1037847365175984_1204322563568573993_n.jpg?stp=dst-jpg_s720x720_tt6&_nc_cat=102&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=833d8c&_nc_eui2=AeFvDghhWlHFRYX7W_Xdg3ByJxISFtwaVyAnEhIW3BpXIKy5P0iyk50eaH7lDn3u7hbIiIrbii46Nl5Hv3R4X01v&_nc_ohc=TVYuyrQSY-0Q7kNvwGcSkGe&_nc_oc=AdqEc5nidwYMC3hQYKeTKDeg9B1Oewd4zIPWp2tk6ZWcBXYukUSv_SzWEB5Sw27fOtA&_nc_zt=23&_nc_ht=scontent.fsgn5-22.fna&edm=AKIiGfEEAAAA&_nc_gid=fQR1RdWTOjcDgKcKR6-Zyw&_nc_tpa=Q5bMBQKrnfGINxBqW1W9l_mFQHK3dIQPAOGDvXJ2bsAqJv_hBB7QYcS0Tn5Mf458fUJNvN5_5hJJDDQq4A&oh=00_AQSW-QXokmjCQM2gZTmvZPGekKLq3nRLMikB1a-pKKFN7Q&oe=6AE83D2C",
+     "is_boosted": false,
+     "buyer_comments": 19,
+     "engagement_score": 1142
+    },
+    {
+     "id": "demo_p125",
+     "caption": "Summer half sleeve shirts \nPerfect for spending your eidi 🤭\nMaterial- Silk Georgette / Satin Silk\nAvailable size-s-3xl\n\n**Only Pre-order**\nInbox us for further details",
+     "photo_url": "https://scontent.fsgn5-10.fna.fbcdn.net/v/t1.6435-9/185526921_628417908553902_2631289622667914489_n.jpg?stp=dst-jpg_s720x720_tt6&_nc_cat=110&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=f727a1&_nc_eui2=AeFM2UHz8c_mjJN8QYp31TBR4n-d3FBFR1bif53cUEVHVu_XkKmioNyNGGMxgOUZnA8ScP6bPe3zegS_Ooq8bAlI&_nc_ohc=EWxqrd3nqQYQ7kNvwHjzMBQ&_nc_oc=Adrf711TzAfTEQplry68ZkEaYyzOe3CI361JH5ivhIJgdMaFHRr9Sdtid7yyu_oFPfE&_nc_zt=23&_nc_ht=scontent.fsgn5-10.fna&edm=AKIiGfEEAAAA&_nc_gid=qryzeTMkU7ks9npdPVa0oA&_nc_tpa=Q5bMBQJzkb7EcJObnSNDi0GtLC-cnCZcFen1Eu5Mk41VxjQmvM-iLjj00FA3IFUGWNsR_D788yEjLx2a8w&oh=00_AQQJUneRE_16q_z8-xerp2k4wWuGeVZhR_ymfz2gx73EqA&oe=6B09F17D",
+     "is_boosted": false,
+     "buyer_comments": 24,
+     "engagement_score": 1134
+    }
+   ],
+   "dimensions": [
+    {
+     "key": "offer_type",
+     "label": "Offer",
+     "groups": [
+      {
+       "posts": 49,
+       "value": "discount",
+       "rank_score": 8.2,
+       "vs_typical": "117% above typical",
+       "median_engagement": 13,
+       "avg_buyer_comments": 7.2,
+       "engagement_vs_page_pct": 117,
+       "buyer_comments_vs_page_pct": 101
+      },
+      {
+       "posts": 6,
+       "value": "other",
+       "rank_score": 0.4,
+       "vs_typical": "17% above typical",
+       "median_engagement": 7,
+       "avg_buyer_comments": 0.5,
+       "engagement_vs_page_pct": 17,
+       "buyer_comments_vs_page_pct": -86
+      },
+      {
+       "posts": 87,
+       "value": "none",
+       "rank_score": -1.6,
+       "vs_typical": "17% below typical",
+       "median_engagement": 5,
+       "avg_buyer_comments": 1.8,
+       "engagement_vs_page_pct": -17,
+       "buyer_comments_vs_page_pct": -49
+      },
+      {
+       "posts": 4,
+       "value": "clearance",
+       "rank_score": -1.3,
+       "vs_typical": "67% below typical",
+       "median_engagement": 2,
+       "avg_buyer_comments": 1,
+       "engagement_vs_page_pct": -67,
+       "buyer_comments_vs_page_pct": -72
+      }
+     ]
+    },
+    {
+     "key": "worn_or_flat",
+     "label": "Worn or flat photo",
+     "groups": [
+      {
+       "posts": 98,
+       "value": "flat",
+       "rank_score": 0,
+       "vs_typical": "0% above typical",
+       "median_engagement": 6,
+       "avg_buyer_comments": 3.1,
+       "engagement_vs_page_pct": 0,
+       "buyer_comments_vs_page_pct": -12
+      },
+      {
+       "posts": 39,
+       "value": "worn",
+       "rank_score": -1.1,
+       "vs_typical": "17% below typical",
+       "median_engagement": 5,
+       "avg_buyer_comments": 4.6,
+       "engagement_vs_page_pct": -17,
+       "buyer_comments_vs_page_pct": 29
+      }
+     ]
+    },
+    {
+     "key": "price_shown",
+     "label": "Price in post",
+     "groups": [
+      {
+       "posts": 3,
+       "value": "price shown",
+       "rank_score": 224.9,
+       "vs_typical": "130.8 times the typical post",
+       "median_engagement": 785,
+       "avg_buyer_comments": 4.3,
+       "engagement_vs_page_pct": 12983,
+       "buyer_comments_vs_page_pct": 21
+      },
+      {
+       "posts": 147,
+       "value": "no price",
+       "rank_score": 0,
+       "vs_typical": "0% above typical",
+       "median_engagement": 6,
+       "avg_buyer_comments": 3.6,
+       "engagement_vs_page_pct": 0,
+       "buyer_comments_vs_page_pct": 0
+      }
+     ]
+    },
+    {
+     "key": "background_style",
+     "label": "Photo background",
+     "groups": [
+      {
+       "posts": 8,
+       "value": "outdoors",
+       "rank_score": 303.8,
+       "vs_typical": "108.4 times the typical post",
+       "median_engagement": 650.5,
+       "avg_buyer_comments": 10,
+       "engagement_vs_page_pct": 10742,
+       "buyer_comments_vs_page_pct": 180
+      },
+      {
+       "posts": 66,
+       "value": "plain or studio",
+       "rank_score": -0.6,
+       "vs_typical": "8% below typical",
+       "median_engagement": 5.5,
+       "avg_buyer_comments": 3.7,
+       "engagement_vs_page_pct": -8,
+       "buyer_comments_vs_page_pct": 5
+      },
+      {
+       "posts": 71,
+       "value": "home setting",
+       "rank_score": -1.4,
+       "vs_typical": "17% below typical",
+       "median_engagement": 5,
+       "avg_buyer_comments": 2.9,
+       "engagement_vs_page_pct": -17,
+       "buyer_comments_vs_page_pct": -19
+      }
+     ]
+    },
+    {
+     "key": "weekday",
+     "label": "Day posted",
+     "groups": [
+      {
+       "posts": 31,
+       "value": "Sunday",
+       "rank_score": 0.9,
+       "vs_typical": "17% above typical",
+       "median_engagement": 7,
+       "avg_buyer_comments": 3.7,
+       "engagement_vs_page_pct": 17,
+       "buyer_comments_vs_page_pct": 5
+      },
+      {
+       "posts": 26,
+       "value": "Tuesday",
+       "rank_score": 0.4,
+       "vs_typical": "8% above typical",
+       "median_engagement": 6.5,
+       "avg_buyer_comments": 3.3,
+       "engagement_vs_page_pct": 8,
+       "buyer_comments_vs_page_pct": -6
+      },
+      {
+       "posts": 20,
+       "value": "Saturday",
+       "rank_score": 0.4,
+       "vs_typical": "8% above typical",
+       "median_engagement": 6.5,
+       "avg_buyer_comments": 2.8,
+       "engagement_vs_page_pct": 8,
+       "buyer_comments_vs_page_pct": -23
+      },
+      {
+       "posts": 23,
+       "value": "Monday",
+       "rank_score": 0,
+       "vs_typical": "0% above typical",
+       "median_engagement": 6,
+       "avg_buyer_comments": 4.6,
+       "engagement_vs_page_pct": 0,
+       "buyer_comments_vs_page_pct": 28
+      },
+      {
+       "posts": 14,
+       "value": "Friday",
+       "rank_score": -0.3,
+       "vs_typical": "8% below typical",
+       "median_engagement": 5.5,
+       "avg_buyer_comments": 5.8,
+       "engagement_vs_page_pct": -8,
+       "buyer_comments_vs_page_pct": 62
+      },
+      {
+       "posts": 18,
+       "value": "Wednesday",
+       "rank_score": -0.7,
+       "vs_typical": "17% below typical",
+       "median_engagement": 5,
+       "avg_buyer_comments": 1.5,
+       "engagement_vs_page_pct": -17,
+       "buyer_comments_vs_page_pct": -58
+      },
+      {
+       "posts": 18,
+       "value": "Thursday",
+       "rank_score": -1.4,
+       "vs_typical": "33% below typical",
+       "median_engagement": 4,
+       "avg_buyer_comments": 3.6,
+       "engagement_vs_page_pct": -33,
+       "buyer_comments_vs_page_pct": 0
+      }
+     ]
+    },
+    {
+     "key": "time_of_day",
+     "label": "Time posted",
+     "groups": [
+      {
+       "posts": 11,
+       "value": "night",
+       "rank_score": 347.7,
+       "vs_typical": "105.8 times the typical post",
+       "median_engagement": 635,
+       "avg_buyer_comments": 8.1,
+       "engagement_vs_page_pct": 10483,
+       "buyer_comments_vs_page_pct": 127
+      },
+      {
+       "posts": 59,
+       "value": "evening",
+       "rank_score": 0,
+       "vs_typical": "0% above typical",
+       "median_engagement": 6,
+       "avg_buyer_comments": 3.6,
+       "engagement_vs_page_pct": 0,
+       "buyer_comments_vs_page_pct": 1
+      },
+      {
+       "posts": 63,
+       "value": "afternoon",
+       "rank_score": -1.3,
+       "vs_typical": "17% below typical",
+       "median_engagement": 5,
+       "avg_buyer_comments": 3.2,
+       "engagement_vs_page_pct": -17,
+       "buyer_comments_vs_page_pct": -11
+      },
+      {
+       "posts": 17,
+       "value": "morning",
+       "rank_score": -0.7,
+       "vs_typical": "17% below typical",
+       "median_engagement": 5,
+       "avg_buyer_comments": 2,
+       "engagement_vs_page_pct": -17,
+       "buyer_comments_vs_page_pct": -44
+      }
+     ]
+    }
+   ],
+   "classified_comments": 1115
+  },
+  "summary": {
+   "actions": [
+    "Show the price in every post: 45% of comments (503 of 1115) ask for it. Posts showing a price have a median engagement of 785 (3 posts), against 6 for posts without one (147 posts).",
+    "Post your next discount offer at night.",
+    "Schedule your next new arrival for Sunday."
+   ],
+   "headline": "Your best pattern is posts at night which are 105.8 times the typical post based on 11 posts.",
+   "supporting": [
+    {
+     "text": "Posts with a discount offer are 117% above typical based on 49 posts.",
+     "dimension": "offer_type"
+    },
+    {
+     "text": "Sunday posts are 17% above typical based on 31 posts.",
+     "dimension": "weekday"
+    },
+    {
+     "text": "Many customers are asking the price in the comments, with 503 comments asking the price.",
+     "dimension": "comment_intents"
+    }
+   ]
+  }
+ }
 }

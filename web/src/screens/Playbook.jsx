@@ -1,6 +1,4 @@
-import { useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
-import { post } from '../api'
 import { usePlaybook } from '../usePlaybook'
 import { EmptyState, ErrorState, ScreenHeader, Skeleton } from '../components/ui'
 
@@ -22,9 +20,9 @@ function Card({ title, children }) {
   )
 }
 
-// One bar per group, scaled to the largest; the tick marks the page average.
+// One bar per group, scaled to the largest; the tick marks the typical post.
 function Bars({ groups, average }) {
-  const max = Math.max(...groups.map((g) => g.avg_engagement), average)
+  const max = Math.max(...groups.map((g) => g.median_engagement), average)
   return (
     <ul className="flex flex-col gap-3">
       {groups.map((g) => (
@@ -32,12 +30,12 @@ function Bars({ groups, average }) {
           <div className="flex items-baseline justify-between gap-3 text-sm">
             <span className="font-semibold first-letter:uppercase">{g.value}</span>
             <span className="text-xs text-muted">
-              {g.posts} posts · {g.engagement_vs_page_pct > 0 ? '+' : ''}{g.engagement_vs_page_pct}% vs average
+              {g.posts} posts · {g.vs_typical}
             </span>
           </div>
           <div className="relative h-3 rounded-full bg-track">
             <div className={`h-full rounded-full ${g.engagement_vs_page_pct >= 0 ? 'bg-accent' : 'bg-bar-grey'}`}
-              style={{ width: `${Math.max(2, (g.avg_engagement / max) * 100)}%` }} />
+              style={{ width: `${Math.max(2, (g.median_engagement / max) * 100)}%` }} />
             <div className="absolute inset-y-[-3px] w-0.5 bg-ink" style={{ left: `${(average / max) * 100}%` }} />
           </div>
         </li>
@@ -86,10 +84,7 @@ function BoostRow({ post: p, busy, onToggle }) {
 
 export function Playbook() {
   const { session, analysis } = useOutletContext()
-  const pageId = session.page.id
-  const { playbook, setPlaybook, error, retry } = usePlaybook(pageId, analysis)
-  const [busy, setBusy] = useState(false)
-  const [toggleError, setToggleError] = useState(null)
+  const { playbook, error, retry, busy, toggleError, toggleBoosted } = usePlaybook(session, analysis)
 
   const header = <ScreenHeader title="Your playbook" subtitle="What works on your page" />
   if (error) return <>{header}<ErrorState message={error} onRetry={retry} /></>
@@ -111,14 +106,6 @@ export function Playbook() {
   const strongest = data.dimensions.find((d) => d.key === data.strongest?.dimension)
   const others = data.dimensions.filter((d) => d !== strongest)
 
-  const toggle = async (p) => {
-    setBusy(true); setToggleError(null)
-    try {
-      setPlaybook(await post(`/pages/${pageId}/posts/${p.id}/boosted`, { boosted: !p.is_boosted, accessToken: session.token }))
-    } catch (e) { setToggleError(e.message) }
-    setBusy(false)
-  }
-
   return (
     <>
       {header}
@@ -127,12 +114,12 @@ export function Playbook() {
         : <EmptyState title="The written summary is not ready">The numbers below are up to date. Run the analysis again to get the summary.</EmptyState>}
       <p className="text-xs text-muted">
         Based on {data.basis.posts} posts{data.basis.boosted_excluded > 0 && `; ${data.basis.boosted_excluded} boosted left out`}.
-        The line on each bar is your page average. Groups with fewer than 3 posts are not shown.
+        Bars show the median post (so one viral post cannot skew them); the line is your typical post. Groups with fewer than 3 posts are not shown.
       </p>
 
       {strongest && (
         <Card title={`Strongest pattern: ${strongest.label.toLowerCase()}`}>
-          <Bars groups={strongest.groups} average={data.basis.avg_engagement} />
+          <Bars groups={strongest.groups} average={data.basis.median_engagement} />
         </Card>
       )}
       {!data.dimensions.length && (
@@ -148,6 +135,11 @@ export function Playbook() {
       )}
 
       <Card title="What customers ask before buying">
+        {data.price?.share_pct > 0 && (
+          <p className="text-sm font-semibold text-info">
+            {data.price.share_pct}% of comments ask the price ({data.price.question_comments} of {data.price.classified_comments}).
+          </p>
+        )}
         <Asks intents={data.intents} />
       </Card>
 
@@ -167,7 +159,7 @@ export function Playbook() {
       <Card title="Was this boosted?">
         <p className="text-sm text-muted">Paid reach inflates engagement. Mark boosted posts and they are left out of every pattern.</p>
         <ul className="flex flex-col gap-2">
-          {data.top_posts.map((p) => <BoostRow key={p.id} post={p} busy={busy} onToggle={toggle} />)}
+          {data.top_posts.map((p) => <BoostRow key={p.id} post={p} busy={busy} onToggle={toggleBoosted} />)}
         </ul>
         {busy && <p role="status" className="text-xs text-muted">Updating your playbook…</p>}
         {toggleError && <ErrorState message={toggleError} />}
@@ -180,7 +172,7 @@ export function Playbook() {
             {others.map((d) => (
               <div key={d.key} className="flex flex-col gap-2.5">
                 <h3 className="text-sm font-bold">{d.label}</h3>
-                <Bars groups={d.groups} average={data.basis.avg_engagement} />
+                <Bars groups={d.groups} average={data.basis.median_engagement} />
               </div>
             ))}
           </div>

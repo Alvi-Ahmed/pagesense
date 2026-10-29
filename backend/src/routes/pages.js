@@ -5,7 +5,7 @@ import { startTagging, getTagStatus } from '../tag.js';
 import { DEMO_PAGE_ID } from '../demo.js';
 import { db } from '../db.js';
 import { startAnalysis, latestAnalysis } from '../analysis.js';
-import { latestPlaybook, setBoosted } from '../playbook.js';
+import { latestPlaybook, previewPlaybook, setBoosted } from '../playbook.js';
 import { needsReply } from '../replies.js';
 
 const router = Router();
@@ -27,6 +27,10 @@ const requireManager = async (req, res, next) => {
   }
 };
 
+// The demo page is shared and read-only: nothing a visitor does may write to the database.
+const rejectDemoWrites = (req, res, next) =>
+  req.params.id === DEMO_PAGE_ID ? res.status(400).json({ error: 'The demo page is read-only' }) : next();
+
 const handle = (fn) => async (req, res) => {
   try {
     res.status(202).json(await fn(req));
@@ -44,11 +48,13 @@ router.post('/:id/sync', requireManager, handle((req) => {
 router.get('/:id/sync', (req, res) => res.json(getSyncStatus(req.params.id)));
 
 // Optional body.limit tags only the first N untagged posts (handy for a cheap trial run).
-router.post('/:id/tag', requireManager, handle((req) => startTagging(req.params.id, Number(req.body.limit) || 0)));
+router.post('/:id/tag', rejectDemoWrites, requireManager, handle((req) => startTagging(req.params.id, Number(req.body.limit) || 0)));
 router.get('/:id/tag', (req, res) => res.json(getTagStatus(req.params.id)));
 
 // Analysis runs automatically after a sync; POST is the Retry button.
-router.post('/:id/analysis', requireManager, handle((req) => startAnalysis(req.params.id)));
+// Demo: nothing to rerun (and nothing may be written), so Retry just returns the latest job.
+router.post('/:id/analysis', requireManager, handle((req) =>
+  (req.params.id === DEMO_PAGE_ID ? latestAnalysis(req.params.id) : startAnalysis(req.params.id))));
 router.get('/:id/analysis', async (req, res) => {
   try {
     res.json(await latestAnalysis(req.params.id));
@@ -69,10 +75,22 @@ router.get('/:id/playbook', async (req, res) => {
 });
 
 // "Was this boosted?" toggle: boosted posts are excluded from the playbook, which is rebuilt before this returns.
-router.post('/:id/posts/:postId/boosted', requireManager, async (req, res) => {
+router.post('/:id/posts/:postId/boosted', rejectDemoWrites, requireManager, async (req, res) => {
   try {
     if (typeof req.body.boosted !== 'boolean') return res.status(400).json({ error: 'boosted must be true or false' });
     res.json(await setBoosted(req.params.id, req.params.postId, req.body.boosted));
+  } catch (err) {
+    console.error(err.message);
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
+// Demo only: the playbook as it would look with the visitor's own boosted flags (kept in their browser).
+// Computed in memory; nothing is saved.
+router.post('/:id/playbook/preview', async (req, res) => {
+  try {
+    if (req.params.id !== DEMO_PAGE_ID) return res.status(400).json({ error: 'Preview is only for the demo page' });
+    res.json(await previewPlaybook(req.params.id, req.body.boosted));
   } catch (err) {
     console.error(err.message);
     res.status(err.status || 500).json({ error: err.message });

@@ -1,8 +1,7 @@
 import { db } from './db.js';
-import { bulkChat } from './meta.js';
+import { completeJSON } from './ai.js';
 
 const MIN_POSTS = 3; // a group smaller than this is noise, not a pattern
-const STRONG_POSTS = 5; // the "strongest pattern" prefers groups at least this big
 const BUYING = ['order_intent', 'price_question', 'size_or_color_request', 'stock_or_restock',
   'delivery_question', 'negotiation'];
 const DHAKA_OFFSET_MS = 6 * 3600_000; // posting times are read in Bangladesh time
@@ -38,15 +37,35 @@ const DIMENSIONS = {
 };
 
 const avg = (xs) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
+// Median, so one viral post does not drag a whole group up.
+const median = (xs) => {
+  if (!xs.length) return 0;
+  const s = [...xs].sort((a, b) => a - b);
+  const mid = s.length >> 1;
+  return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
+};
 const round = (n) => Math.round(n * 10) / 10;
-// Signed whole-number percent difference from the page average, e.g. +91 or -20.
+// Signed whole-number percent difference from the page figure, e.g. +91 or -20.
 const pctVs = (value, base) => (base ? Math.round((value / base - 1) * 100) : null);
+// Plain wording for a lift: percentages read badly once a group is several times the typical post.
+const vsTypical = (value, base) => {
+  if (!base) return null;
+  const pct = Math.round((value / base - 1) * 100);
+  if (pct >= 200) return `${round(value / base)} times the typical post`;
+  return pct >= 0 ? `${pct}% above typical` : `${-pct}% below typical`;
+};
+
+// Headline needs at least this many posts behind it.
+const HEADLINE_POSTS = 10;
+const PRICE_SHARE_ALERT_PCT = 20;
 
 // Pure: posts, tags (by post id) and buying-comment counts (by post id) in, patterns out.
+// Groups are compared on median engagement. Ranking uses lift (as a fraction, 0.91 = +91%) times sqrt(posts),
+// so a big group with a solid lift outranks a tiny one with a huge lift.
 export function computePatterns(posts, tags, buying) {
   const organic = posts.filter((p) => !p.is_boosted);
   const base = {
-    engagement: avg(organic.map((p) => Number(p.engagement_score))),
+    engagement: median(organic.map((p) => Number(p.engagement_score))),
     buyer_comments: avg(organic.map((p) => buying.get(p.id) || 0)),
   };
   const dimensions = [];
@@ -61,32 +80,40 @@ export function computePatterns(posts, tags, buying) {
       groups.get(v).push(p);
     }
     const rows = [...groups].filter(([, ps]) => ps.length >= MIN_POSTS).map(([value, ps]) => {
-      const engagement = avg(ps.map((p) => Number(p.engagement_score)));
+      const engagement = median(ps.map((p) => Number(p.engagement_score)));
       const buyer = avg(ps.map((p) => buying.get(p.id) || 0));
+      const pct = pctVs(engagement, base.engagement);
       return {
         value, posts: ps.length,
-        avg_engagement: round(engagement), engagement_vs_page_pct: pctVs(engagement, base.engagement),
+        median_engagement: round(engagement), engagement_vs_page_pct: pct, vs_typical: vsTypical(engagement, base.engagement),
+        rank_score: pct == null ? null : round((pct / 100) * Math.sqrt(ps.length)),
         avg_buyer_comments: round(buyer), buyer_comments_vs_page_pct: pctVs(buyer, base.buyer_comments),
       };
-    }).sort((a, b) => b.avg_engagement - a.avg_engagement);
+    }).sort((a, b) => b.median_engagement - a.median_engagement);
     if (rows.length >= 2) dimensions.push({ key, label: dim.label, groups: rows }); // one group has nothing to compare with
   }
 
-  // Strongest pattern: the group furthest above the page average, preferring groups of 5+ posts.
-  let strongest = null;
-  for (const minPosts of [STRONG_POSTS, MIN_POSTS]) {
-    for (const d of dimensions) {
-      for (const g of d.groups) {
-        if (g.posts >= minPosts && (!strongest || g.engagement_vs_page_pct > strongest.engagement_vs_page_pct)) {
-          strongest = { dimension: d.key, label: d.label, value: g.value, posts: g.posts, engagement_vs_page_pct: g.engagement_vs_page_pct };
-        }
-      }
-    }
-    if (strongest) break;
-  }
+  // Ranked patterns: groups with enough posts for a headline, best adjusted lift first.
+  const ranked = dimensions
+    .flatMap((d) => d.groups.filter((g) => g.posts >= HEADLINE_POSTS && g.rank_score != null)
+      .map((g) => ({ dimension: d.key, label: d.label, ...g })))
+    .sort((a, b) => b.rank_score - a.rank_score);
+  const strongest = ranked[0]?.engagement_vs_page_pct > 0 ? ranked[0] : null;
+
+  // Price shown vs not: always computed, even when one side is too small to rank.
+  const side = (flag) => {
+    const ps = organic.filter((p) => tags.get(p.id) && tags.get(p.id).price_shown === flag);
+    const m = median(ps.map((p) => Number(p.engagement_score)));
+    return { posts: ps.length, median_engagement: round(m), engagement_vs_page_pct: pctVs(m, base.engagement) };
+  };
+  const price = { shown: side(true), not_shown: side(false) };
+  price.enough = price.shown.posts >= MIN_POSTS && price.not_shown.posts >= MIN_POSTS;
+
   return {
-    basis: { posts: organic.length, boosted_excluded: posts.length - organic.length, avg_engagement: round(base.engagement), avg_buyer_comments: round(base.buyer_comments) },
+    basis: { posts: organic.length, boosted_excluded: posts.length - organic.length, median_engagement: round(base.engagement), avg_buyer_comments: round(base.buyer_comments) },
     strongest,
+    ranked: ranked.slice(0, 8),
+    price,
     dimensions,
   };
 }
@@ -127,24 +154,29 @@ export const INTENT_LABELS = {
   praise: 'praising', other: 'other (tags, greetings, seller replies)',
 };
 
-async function explain(patterns, intents) {
+async function explain(patterns, intents, price_question_share_pct) {
   const named = Object.fromEntries(Object.entries(intents).map(([k, n]) => [INTENT_LABELS[k] || k, n]));
-  const input = { ...patterns, comment_intents: named };
+  const input = { ...patterns, price_question_share_pct, comment_intents: named };
   const prompt = `You explain what works on a small seller's Facebook page, in plain, friendly English a shopkeeper understands.
-Below are numbers computed from the page's own posts. "engagement_vs_page_pct" says how much higher (positive) or lower (negative) a group's average engagement is than the page average; "buyer_comments_vs_page_pct" is the same for comments asking to buy (price, size, stock, order). "strongest" is the pattern with the biggest lift. "comment_intents" counts what customers' comments are about.
+Below are numbers computed from the page's own posts. "engagement_vs_page_pct" says how much higher (positive) or lower (negative) a group's typical (median) engagement is than the page's typical post; "buyer_comments_vs_page_pct" is the same for comments asking to buy (price, size, stock, order). "strongest" is the pattern with the best lift adjusted for how many posts back it (null if no pattern has ${HEADLINE_POSTS} or more posts); "ranked" lists the best patterns in order. "comment_intents" counts what customers' comments are about.
 Rules:
-- Use ONLY numbers that appear in the data. Quote percentages and post counts exactly as given (for example "91% above average", "based on 49 posts"). Never compute new numbers, never write any other number, and do not guess causes.
-- headline: one sentence about the strongest pattern, with its post count.
+- Use ONLY numbers that appear in the data. Quote each group's "vs_typical" wording and post counts exactly as given (for example "91% above typical", "based on 49 posts"). Never compute new numbers, never write any other number, and do not guess causes.
+- headline: one sentence about the strongest pattern, with its post count. If strongest is null, say that no pattern has ${HEADLINE_POSTS} or more posts behind it yet.
 - supporting: 2 to 4 more findings from other patterns or from comment_intents; each has "dimension" (a key from the data, or "comment_intents") and one-sentence "text".
-- actions: exactly 3 different, concrete instructions for the seller's next posts, each a full sentence that starts with a verb (for example "Post your next discount offer in the evening."), without numbers.
+- actions: exactly 3 different, concrete instructions for the seller's next posts, each a full sentence that starts with a verb (for example "Post your next discount offer in the evening."), without numbers. Do not write an action about showing the price: that is added separately.
 
 ${JSON.stringify(input)}`;
   for (let attempt = 0; attempt < 3; attempt++) {
-    const res = await bulkChat({
+    const { data: s } = await completeJSON('playbook', {
       messages: [{ role: 'user', content: prompt }],
       response_format: { type: 'json_schema', json_schema: { name: 'playbook_summary', schema: SUMMARY_SCHEMA } },
+    }, {
+      validate: (d) => {
+        if (typeof d?.headline !== 'string' || !Array.isArray(d.supporting) || !Array.isArray(d.actions)) {
+          throw new Error('answer is missing headline, supporting or actions');
+        }
+      },
     });
-    const s = JSON.parse(res.choices[0].message.content);
     s.supporting = s.supporting.slice(0, 4);
     s.actions = s.actions.slice(0, 3);
     const stray = strayNumber(s, input);
@@ -166,10 +198,11 @@ async function fetchAll(query) {
   }
 }
 
-async function compute(pageId) {
-  const posts = await fetchAll(() => db.from('posts')
+async function compute(pageId, overrides = {}) {
+  const posts = (await fetchAll(() => db.from('posts')
     .select('id, message, photo_url, created_time, reactions, comments_count, shares, engagement_score, is_boosted')
-    .eq('page_id', pageId).order('id'));
+    .eq('page_id', pageId).order('id')))
+    .map((p) => (p.id in overrides ? { ...p, is_boosted: overrides[p.id] } : p)); // overrides: a visitor's own boosted flags
   const tags = new Map((await fetchAll(() => db.from('post_tags')
     .select('*, posts!inner(page_id)').eq('posts.page_id', pageId).order('post_id'))).map((t) => [t.post_id, t]));
   const comments = await fetchAll(() => db.from('comments')
@@ -182,6 +215,10 @@ async function compute(pageId) {
     if (BUYING.includes(c.intent)) buying.set(c.post_id, (buying.get(c.post_id) || 0) + 1);
   }
   const patterns = computePatterns(posts, tags, buying);
+  const price_comments = intents.price_question || 0;
+  patterns.price.question_comments = price_comments;
+  patterns.price.classified_comments = comments.length;
+  patterns.price.share_pct = comments.length ? Math.round((price_comments / comments.length) * 100) : 0;
   // Best posts overall, boosted ones included and flagged, so the owner can mark one as boosted.
   const top_posts = posts.filter((p) => p.photo_url)
     .sort((a, b) => b.engagement_score - a.engagement_score).slice(0, 5)
@@ -192,18 +229,40 @@ async function compute(pageId) {
   return { patterns, intents, top_posts, classified_comments: comments.length };
 }
 
+// Written in code, not by the model, so the numbers are exact: when many comments ask the price,
+// every post should show it.
+function priceAction({ price }) {
+  if (price.share_pct <= PRICE_SHARE_ALERT_PCT) return null;
+  let text = `Show the price in every post: ${price.share_pct}% of comments (${price.question_comments} of ${price.classified_comments}) ask for it.`;
+  if (price.enough) {
+    text += ` Posts showing a price have a median engagement of ${price.shown.median_engagement} (${price.shown.posts} posts), against ${price.not_shown.median_engagement} for posts without one (${price.not_shown.posts} posts).`;
+  }
+  return text;
+}
+
+// Everything the screen needs, computed from current data (plus optional per-visitor boosted overrides).
+async function assemble(pageId, overrides) {
+  const { patterns, intents, top_posts, classified_comments } = await compute(pageId, overrides);
+  let summary = null;
+  let failed = 0;
+  if (patterns.dimensions.length) {
+    try {
+      summary = await explain(patterns, intents, patterns.price.share_pct);
+      const alert = priceAction(patterns);
+      if (alert) {
+        // keep the model's other actions, drop any price action it wrote anyway, lead with ours
+        summary.actions = [alert, ...summary.actions.filter((a) => !/price/i.test(a))].slice(0, 3);
+      }
+    } catch (e) { failed = 1; console.error('playbook explanation failed:', e.status ?? '', JSON.stringify(e.error ?? e.message)); }
+  }
+  return { data: { ...patterns, intents, top_posts, classified_comments }, summary, failed };
+}
+
 // One build at a time per page: a second request waits for the first, then rebuilds with fresh data.
 const queue = new Map();
 
 async function build(pageId) {
-  const { patterns, intents, top_posts, classified_comments } = await compute(pageId);
-  let summary = null;
-  let failed = 0;
-  if (patterns.dimensions.length) {
-    try { summary = await explain(patterns, intents); }
-    catch (e) { failed = 1; console.error('playbook explanation failed:', e.status ?? '', JSON.stringify(e.error ?? e.message)); }
-  }
-  const data = { ...patterns, intents, top_posts, classified_comments };
+  const { data, summary, failed } = await assemble(pageId, {});
   const { error } = await db.from('playbooks').insert({ page_id: pageId, data, summary });
   if (error) throw new Error(`playbooks: ${error.message}`);
   return { done: 1, failed };
@@ -234,4 +293,18 @@ export async function setBoosted(pageId, postId, boosted) {
   if (!data.length) throw Object.assign(new Error('Post not found on this page'), { status: 404 });
   await buildPlaybook(pageId);
   return latestPlaybook(pageId);
+}
+
+// Demo mode: the visitor's boosted flags come with the request and nothing is written anywhere.
+// Results are kept in memory by flag set, so repeated toggles don't repeat the model call.
+const previews = new Map();
+export async function previewPlaybook(pageId, boosted) {
+  const overrides = Object.fromEntries(Object.entries(boosted || {}).filter(([, v]) => typeof v === 'boolean'));
+  const key = `${pageId}:${JSON.stringify(Object.entries(overrides).sort())}`;
+  if (!previews.has(key)) {
+    const { data, summary } = await assemble(pageId, overrides);
+    if (previews.size >= 100) previews.delete(previews.keys().next().value);
+    previews.set(key, { status: 'ready', data, summary, created_at: new Date().toISOString() });
+  }
+  return previews.get(key);
 }
