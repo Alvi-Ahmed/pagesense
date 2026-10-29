@@ -129,8 +129,8 @@ export async function startSync(pageId, days) {
   run(pageId, page.access_token, job)
     .then(async () => {
       job.status = 'done';
-      // analysis follows every successful sync; its failure must not mark the sync failed
-      await startAnalysis(pageId).catch((e) => console.error('could not start analysis:', e.message));
+      // stages run for the new posts and comments after every successful sync; their failure must not mark the sync failed
+      await startAnalysis(pageId, { source: 'sync' }).catch((e) => console.error('could not start analysis:', e.message));
     })
     .catch((e) => { console.error('sync failed', pageId, e.message); job.status = 'error'; job.error = e.message; })
     .finally(() => { job.finishedAt = new Date().toISOString(); });

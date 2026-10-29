@@ -51,10 +51,11 @@ router.get('/:id/sync', (req, res) => res.json(getSyncStatus(req.params.id)));
 router.post('/:id/tag', rejectDemoWrites, requireManager, handle((req) => startTagging(req.params.id, Number(req.body.limit) || 0)));
 router.get('/:id/tag', (req, res) => res.json(getTagStatus(req.params.id)));
 
-// Analysis runs automatically after a sync; POST is the Retry button.
-// Demo: nothing to rerun (and nothing may be written), so Retry just returns the latest job.
+// Analysis runs automatically after a sync, on startup and when a page is opened: POST runs whichever stages
+// are missing or out of date (it is also the Retry button). { force: true } is Re-analyse: every stage, every item.
+// Demo: nothing to rerun (and nothing may be written), so startAnalysis just returns the latest job.
 router.post('/:id/analysis', requireManager, handle((req) =>
-  (req.params.id === DEMO_PAGE_ID ? latestAnalysis(req.params.id) : startAnalysis(req.params.id))));
+  startAnalysis(req.params.id, { force: req.body.force === true })));
 router.get('/:id/analysis', async (req, res) => {
   try {
     res.json(await latestAnalysis(req.params.id));

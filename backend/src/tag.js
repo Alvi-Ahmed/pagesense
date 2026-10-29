@@ -97,7 +97,7 @@ async function fetchAll(query) {
 }
 
 // Posts with a photo and no post_tags row yet.
-async function untaggedPosts(pageId) {
+export async function untaggedPosts(pageId) {
   const tagged = new Set((await fetchAll(() =>
     db.from('post_tags').select('post_id, posts!inner(page_id)').eq('posts.page_id', pageId).order('post_id')
   )).map((r) => r.post_id));
@@ -115,8 +115,25 @@ async function save(rows, state) {
   state.tagged += rows.length;
 }
 
-async function run(pageId, limit, state) {
-  let todo = await untaggedPosts(pageId);
+// Photo posts created after `since` (a timestamp) that still have no tags: what a sync brought in.
+export async function hasUntaggedSince(pageId, since) {
+  if (!since) return (await untaggedPosts(pageId)).length > 0;
+  const { data, error } = await db.from('posts').select('id').eq('page_id', pageId)
+    .not('photo_url', 'is', null).gt('created_at', since).limit(1000);
+  if (error) throw error;
+  if (!data.length) return false;
+  const { data: tags, error: err } = await db.from('post_tags').select('post_id').in('post_id', data.map((p) => p.id));
+  if (err) throw err;
+  return tags.length < data.length;
+}
+
+async function allPhotoPosts(pageId) {
+  return fetchAll(() => db.from('posts').select('id, message, photo_url').eq('page_id', pageId)
+    .not('photo_url', 'is', null).order('id'));
+}
+
+async function run(pageId, limit, state, all = false) {
+  let todo = all ? await allPhotoPosts(pageId) : await untaggedPosts(pageId);
   if (limit) todo = todo.slice(0, limit);
   state.total = todo.length;
   await state.onProgress?.(0, todo.length);
@@ -144,11 +161,12 @@ async function run(pageId, limit, state) {
   }
 }
 
-// Used by the analysis pipeline: tags every untagged photo post and reports progress.
-export async function tagPage(pageId, { progress } = {}) {
+// Used by the analysis pipeline: tags every untagged photo post (or, with all, every photo post again)
+// and reports progress.
+export async function tagPage(pageId, { progress, all = false } = {}) {
   const state = { total: 0, processed: 0, tagged: 0, failed: 0, onProgress: progress };
-  await run(pageId, 0, state);
-  return { tagged: state.tagged, failed: state.failed };
+  await run(pageId, 0, state, all);
+  return { tagged: state.tagged, failed: state.failed, total: state.total };
 }
 
 // Starts a background tagging run; already-tagged posts are skipped. One run per page at a time.

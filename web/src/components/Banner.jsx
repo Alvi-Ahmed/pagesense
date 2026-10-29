@@ -1,3 +1,5 @@
+const STAGE_LABEL = { tagging: 'reading photos', classification: 'reading comments', playbook: 'building your playbook' }
+
 // Slim status strip shown above every screen while syncing/analysing, or when either fails.
 export function Banner({ sync, analysis, error, canRetry, onRetry }) {
   let tone = null
@@ -17,8 +19,8 @@ export function Banner({ sync, analysis, error, canRetry, onRetry }) {
   } else if (analysis?.status === 'running') {
     tone = 'busy'
     text = analysis.total > 0
-      ? `Analyzed ${analysis.processed} of ${analysis.total} · ${analysis.stage}`
-      : `Analyzing · ${analysis.stage ?? 'starting'}`
+      ? `Analyzed ${analysis.processed} of ${analysis.total} · ${STAGE_LABEL[analysis.stage] ?? analysis.stage}`
+      : `Analyzing · ${STAGE_LABEL[analysis.stage] ?? analysis.stage ?? 'starting'}`
   }
   if (!tone) return null
 

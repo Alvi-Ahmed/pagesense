@@ -82,13 +82,26 @@ async function fetchAll(query) {
 
 // Comments with text and no intent yet. Empty comments (stickers, photos) cannot be classified,
 // and neither can the page's own replies: they are not customers.
-async function unclassified(pageId) {
+async function unclassified(pageId, all = false) {
   const skipPage = await hasAuthorColumns();
   return fetchAll(() => {
-    const q = db.from('comments').select('id, post_id, message, posts!inner(page_id)')
-      .eq('posts.page_id', pageId).is('intent', null).not('message', 'is', null).neq('message', '').order('id');
+    let q = db.from('comments').select('id, post_id, message, posts!inner(page_id)')
+      .eq('posts.page_id', pageId).not('message', 'is', null).neq('message', '').order('id');
+    if (!all) q = q.is('intent', null);
     return skipPage ? q.eq('is_page', false) : q;
   });
+}
+
+// Customer comments with text and no intent that arrived after `since` (a timestamp), or ever if no timestamp.
+export async function hasUnclassifiedSince(pageId, since) {
+  const skipPage = await hasAuthorColumns();
+  let q = db.from('comments').select('id, posts!inner(page_id)', { count: 'exact', head: true })
+    .eq('posts.page_id', pageId).is('intent', null).not('message', 'is', null).neq('message', '');
+  if (skipPage) q = q.eq('is_page', false);
+  if (since) q = q.gt('created_at', since);
+  const { count, error } = await q;
+  if (error) throw error;
+  return count > 0;
 }
 
 async function save(rows) {
@@ -97,8 +110,8 @@ async function save(rows) {
 }
 
 // Analysis stage: classifies every unclassified comment, reporting progress as it goes.
-export async function classifyPage(pageId, { progress } = {}) {
-  const todo = await unclassified(pageId);
+export async function classifyPage(pageId, { progress, all = false } = {}) {
+  const todo = await unclassified(pageId, all);
   let classified = 0;
   let failed = 0;
   await progress?.(0, todo.length);

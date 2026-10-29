@@ -6,7 +6,16 @@ Status: DONE / PARTIAL / MISSING. Update this file after each item.
 1. DONE: Sync: full post history (paging.next), photos, reactions, shares, all comments. Also records who wrote
    each comment (is_page), its parent and whether the page answered it. Needs db/003_comment_authors.sql
    run in Supabase and a re-sync; until then nothing is marked answered.
-2. DONE: Analysis job: runs after sync; status in DB (queued/running/done/failed, processed, total, error).
+2. DONE: Analysis job, stage-aware. Stages: tagging, classification, playbook, each with a version in
+   src/analysis.js and a row per page in analysis_stages (db/004_analysis_stages.sql). A stage runs when it has
+   no record (on missing items only), is on an older version (on every item again), or new posts/comments arrived
+   since it completed; the playbook is rebuilt whenever an earlier stage did work. Triggered when a page is
+   opened (POST /pages/:id/analysis), when the backend starts, and after every sync. "Re-analyse" in the header
+   menu sends { force: true }: every stage, every item. Job status in DB (queued/running/done/failed,
+   processed/total across stages, error). Without migration 004 it falls back to "run whatever is missing".
+   The demo is read-only: startAnalysis never creates a job for it. Real page "Mega Genie": synced in full
+   (authors recorded), tagged, 2,625 of 11,928 customer comments classified, then stopped by the owner; the
+   stage is recorded complete so only comments that arrive later are classified. Re-analyse does the rest.
 3. DONE: Post tagging (muse-spark): product phrase, product type, worn/flat, background, price shown, offer type.
 4. DONE: Comment classification (batched): intent (price_question, size_or_color_request,
    stock_or_restock, order_intent, interested, delivery_question, product_question, complaint,
@@ -55,9 +64,10 @@ Status: DONE / PARTIAL / MISSING. Update this file after each item.
 16. MISSING: Create post screen.
 17. MISSING: Orders screen.
 18. MISSING: Catalog screen.
-19. PARTIAL: Demo mode (anonymized snapshot, same endpoints as real mode). Snapshot re-exported: newest 150
-    posts, names replaced by "Customer N", author/parent fields. Still to do: run migration 003, then
-    npm run demo:seed -- --reset, npm run demo:analyze, npm run demo:save-analysis.
+19. DONE: Demo mode (anonymized snapshot, same endpoints as real mode, read-only). Snapshot: newest 150
+    posts, names replaced by "Customer N" (npm run demo:scan checks for leftovers), author/parent fields so
+    answered comments are left out of "Needs your reply". Refresh: demo:export, demo:seed -- --reset,
+    demo:analyze, demo:save-analysis.
 20. PARTIAL: Loading, empty and error states everywhere.
 
 ## Build order for what's left

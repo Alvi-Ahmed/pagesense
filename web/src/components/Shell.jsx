@@ -21,6 +21,7 @@ export function Shell({ session, onDisconnect }) {
   const status = usePageStatus(session)
   const [menu, setMenu] = useState(false)
   const syncing = status.sync?.status === 'running'
+  const busy = syncing || ['queued', 'running'].includes(status.analysis?.status)
   const posts = syncing ? status.sync.posts : status.summary?.posts
 
   return (
@@ -50,6 +51,17 @@ export function Shell({ session, onDisconnect }) {
         </div>
         {menu && (
           <div className="absolute top-[72px] right-5 z-20 rounded-card border border-line bg-white p-1 shadow-lg">
+            {!session.demo && (
+              <button
+                disabled={busy}
+                onClick={() => {
+                  setMenu(false)
+                  if (window.confirm('Re-analyse your whole page? This re-reads every photo and comment, takes a while and uses AI credits.')) status.reanalyse()
+                }}
+                className="min-h-11 w-full rounded-btn px-4 text-left text-sm font-semibold disabled:opacity-50">
+                Re-analyse
+              </button>
+            )}
             <button onClick={onDisconnect} className="min-h-11 w-full rounded-btn px-4 text-left text-sm font-semibold text-warn">
               {session.demo ? 'Exit demo' : 'Disconnect page'}
             </button>

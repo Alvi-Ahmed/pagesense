@@ -38,6 +38,12 @@ export function usePageStatus(session) {
           const started = await post(`/pages/${page.id}/sync`, { accessToken: token, days })
           if (!cancelled) setSync(started)
         } catch (e) { if (!cancelled) setError(e.message) }
+      } else if (cur.s.status !== 'running' && !['queued', 'running'].includes(cur.a.status)) {
+        // An already analysed page may be missing stages added since, or have new items: the server runs only what is needed.
+        try {
+          const a = await post(`/pages/${page.id}/analysis`, { accessToken: token })
+          if (!cancelled) setAnalysis(a)
+        } catch (e) { if (!cancelled) setError(e.message) }
       }
     })()
     return () => { cancelled = true }
@@ -59,5 +65,12 @@ export function usePageStatus(session) {
     } catch (e) { setError(e.message) }
   }
 
-  return { sync, analysis, summary, error, retry, refresh }
+  // Re-analyse: every stage again, on every post and comment.
+  const reanalyse = async () => {
+    setError(null)
+    try { setAnalysis(await post(`/pages/${page.id}/analysis`, { accessToken: token, force: true })) }
+    catch (e) { setError(e.message) }
+  }
+
+  return { sync, analysis, summary, error, retry, refresh, reanalyse }
 }
