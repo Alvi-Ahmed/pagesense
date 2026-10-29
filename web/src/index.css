@@ -1,1 +1,37 @@
 @import "tailwindcss";
+
+/* Design tokens, taken from the PageSense design canvas. */
+@theme {
+  --color-bg: #F3F5F3;
+  --color-ink: #142019;
+  --color-muted: #4A5751;
+  --color-line: #DDE3DF;
+  --color-track: #EDF1EE;
+  --color-bar-grey: #8A968F;
+  --color-accent: #12694A;
+  --color-accent-dark: #0B4A33;
+  --color-accent-soft: #E3F1EA;
+  --color-accent-pale: #B9D9C9;
+  --color-info: #1F4FA8;
+  --color-info-soft: #E5ECFA;
+  --color-warn: #9A3B00;
+  --color-warn-soft: #FDE8DC;
+  --color-amber-ink: #4F3000;
+  --color-amber-soft: #FCF1DF;
+  --color-amber-line: #D9B27A;
+
+  --font-sans: 'Plus Jakarta Sans', 'Hind Siliguri', system-ui, sans-serif;
+  --font-bangla: 'Hind Siliguri', 'Plus Jakarta Sans', sans-serif;
+
+  --radius-btn: 12px;
+  --radius-card: 16px;
+  --radius-panel: 20px;
+  --radius-hero: 22px;
+}
+
+body {
+  margin: 0;
+  background: #E4E9E5; /* desktop gutter around the 430px app column */
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}

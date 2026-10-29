@@ -3,6 +3,7 @@ import { listUserPages } from '../facebook.js';
 import { startSync, getSyncStatus } from '../sync.js';
 import { startTagging, getTagStatus } from '../tag.js';
 import { DEMO_PAGE_ID } from '../demo.js';
+import { db } from '../db.js';
 import { startAnalysis, latestAnalysis } from '../analysis.js';
 
 const router = Router();
@@ -49,6 +50,37 @@ router.post('/:id/analysis', requireManager, handle((req) => startAnalysis(req.p
 router.get('/:id/analysis', async (req, res) => {
   try {
     res.json(await latestAnalysis(req.params.id));
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Counts for the app header and Home tiles. Read-only, so no login check (same as the status endpoints).
+router.get('/:id/summary', async (req, res) => {
+  try {
+    const id = req.params.id;
+    const count = async (query) => {
+      const { count, error } = await query;
+      if (error) throw error;
+      return count ?? 0;
+    };
+    const head = { count: 'exact', head: true };
+    const [posts, comments, tagged, classified, order, price, complaint, page] = await Promise.all([
+      count(db.from('posts').select('*', head).eq('page_id', id)),
+      count(db.from('comments').select('*, posts!inner(page_id)', head).eq('posts.page_id', id)),
+      count(db.from('post_tags').select('*, posts!inner(page_id)', head).eq('posts.page_id', id)),
+      count(db.from('comments').select('*, posts!inner(page_id)', head).eq('posts.page_id', id).not('intent', 'is', null)),
+      count(db.from('comments').select('*, posts!inner(page_id)', head).eq('posts.page_id', id).eq('intent', 'order_intent')),
+      count(db.from('comments').select('*, posts!inner(page_id)', head).eq('posts.page_id', id).eq('intent', 'price_question')),
+      count(db.from('comments').select('*, posts!inner(page_id)', head).eq('posts.page_id', id).eq('intent', 'complaint')),
+      db.from('pages').select('id, name').eq('id', id).maybeSingle(),
+    ]);
+    if (!page.data) return res.status(404).json({ error: 'Page not connected' });
+    res.json({
+      page: page.data, posts, comments, tagged, classified,
+      intents: { order_intent: order, price_question: price, complaint },
+    });
   } catch (err) {
     console.error(err.message);
     res.status(500).json({ error: err.message });
