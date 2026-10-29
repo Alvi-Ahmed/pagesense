@@ -27,3 +27,6 @@ seller's voice and language (Bangla, English, Banglish).
 - SAM 3.1 needs a good noun phrase; get it from Muse Spark first, fall back to "person", then "product".
 - Muse Spark classification is accurate but reasoning-heavy: batch 50–100 items, use structured output, use the lowest reasoning effort.
 - Comments are sparse on some pages; always paginate the full history.
+
+## Build status
+- The feature checklist and build order live in docs/build-status.md. Read it at the start of every session and update it after finishing each item.
