@@ -1,7 +1,7 @@
 // Look for personal data left in demo/snapshot.json: names, phone numbers, emails, links, addresses.
 // Run: npm run demo:scan   (set KNOWN_NAMES=/path/names.json to also check a private list of real names)
 import fs from 'node:fs';
-import { findPersonalNames } from './lib/names.js';
+import { findPersonalNames } from '../src/names.js';
 
 const snap = JSON.parse(fs.readFileSync(new URL('../demo/snapshot.json', import.meta.url), 'utf8'));
 const texts = [

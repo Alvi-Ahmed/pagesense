@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
 import { get } from '../api'
+import { loadDrafts } from '../drafts'
 import { usePlaybook } from '../usePlaybook'
 import { EmptyState, ErrorState, Skeleton } from '../components/ui'
 
@@ -35,9 +36,43 @@ function PostToday({ playbook }) {
       <span className="text-xs font-semibold tracking-wide uppercase opacity-80">Post this today</span>
       {action && <p className="text-[20px] leading-snug font-bold">{action}</p>}
       <p className="text-sm opacity-90">{headline}</p>
-      <Link to="/playbook" className="mt-1 flex min-h-11 items-center self-start rounded-btn bg-white px-4 text-sm font-bold text-accent-dark no-underline">
-        See the playbook
-      </Link>
+      <div className="mt-1 flex flex-wrap gap-2">
+        <Link to="/create" state={{ hint: action || headline }}
+          className="flex min-h-11 items-center rounded-btn bg-white px-4 text-sm font-bold text-accent-dark no-underline">
+          Create this post
+        </Link>
+        <Link to="/playbook" className="flex min-h-11 items-center rounded-btn border border-white/60 px-4 text-sm font-bold text-white no-underline">
+          See the playbook
+        </Link>
+      </div>
+    </section>
+  )
+}
+
+function Drafts({ session, analysis }) {
+  const [drafts, setDrafts] = useState(null)
+  useEffect(() => {
+    let cancelled = false
+    loadDrafts(session).then((d) => { if (!cancelled) setDrafts(d) }).catch(() => { if (!cancelled) setDrafts([]) })
+    return () => { cancelled = true }
+  }, [session, analysis?.finished_at])
+  if (!drafts?.length) return null
+  return (
+    <section className="flex flex-col gap-2.5">
+      <h2 className="text-[17px] font-bold">Your drafts</h2>
+      <ul className="flex flex-col gap-2">
+        {drafts.slice(0, 4).map((d) => (
+          <li key={d.id}>
+            <Link to="/create" state={{ draftId: d.id }} className="flex items-center gap-3 rounded-card border border-line bg-white p-2.5 text-ink no-underline">
+              {d.photo_url && <img src={d.photo_url} alt="" loading="lazy" className="size-14 shrink-0 rounded-btn bg-track object-cover" />}
+              <div className="min-w-0 flex-1">
+                <p className="line-clamp-2 text-sm">{d.caption}</p>
+                <p className="text-xs text-muted capitalize">{d.language}{session.demo ? ' · this tab only' : ''}</p>
+              </div>
+            </Link>
+          </li>
+        ))}
+      </ul>
     </section>
   )
 }
@@ -107,6 +142,8 @@ export function Home() {
         <Tile value={n(summary.intents.price_question)} label="price questions waiting" color="text-info" />
         <Tile value={n(summary.intents.complaint)} label="complaints to handle" color="text-warn" />
       </section>
+
+      <Drafts session={session} analysis={analysis} />
 
       <section className="flex flex-col gap-2.5">
         <h2 className="text-[17px] font-bold">Needs your reply</h2>

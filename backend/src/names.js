@@ -1,6 +1,6 @@
 // Finds personal names written as plain text (Facebook only reports names that were tagged).
 // Used by demo:export to remove them and by demo:scan to check nothing was missed.
-import { clip, completeJSON } from '../../src/ai.js';
+import { clip, completeJSON } from './ai.js';
 
 const BATCH = 60;
 const SCHEMA = {
@@ -26,7 +26,7 @@ Rules: copy each name EXACTLY as written, character for character. Do NOT list: 
 Return one object per text with the same id.`;
 
 // items: [{ id, text }] -> Map(id -> [names that really occur in that text])
-export async function findPersonalNames(items) {
+export async function findPersonalNames(items, { quiet = false } = {}) {
   const found = new Map();
   const todo = items.filter((i) => i.text && i.text.trim());
   for (let i = 0; i < todo.length; i += BATCH) {
@@ -42,8 +42,8 @@ export async function findPersonalNames(items) {
       const real = (row.names || []).map((n) => n.trim()).filter((n) => n.length >= 2 && text?.includes(n));
       if (real.length) found.set(row.id, real);
     }
-    process.stdout.write('.');
+    if (!quiet) process.stdout.write('.');
   }
-  process.stdout.write('\n');
+  if (!quiet) process.stdout.write('\n');
   return found;
 }

@@ -69,6 +69,7 @@ const HEADLINE_POSTS = 10;
 const MAX_LIFT = 10; // a group more than this many times the typical post is more likely a quirk than a pattern
 const UNUSUAL_MIN_LIFT = 1.5;
 const PRICE_SHARE_ALERT_PCT = 20;
+const WEAK_WINDOW_DAYS = 180;
 
 // Pure: posts, tags (by post id) and buying-comment counts (by post id) in, patterns out.
 // Groups are compared on median engagement. Ranking uses lift (as a fraction, 0.91 = +91%) times sqrt(posts),
@@ -254,7 +255,14 @@ async function compute(pageId, overrides = {}) {
       id: p.id, caption: (p.message || '').slice(0, 200), photo_url: p.photo_url, is_boosted: p.is_boosted,
       engagement_score: Number(p.engagement_score), buyer_comments: buying.get(p.id) || 0,
     }));
-  return { patterns, intents, top_posts, classified_comments: comments.length };
+  // Weakest recent posts with a real caption: candidates for "Improve this post". Old posts are left out
+  // because a post from years ago says little about what to fix now.
+  const newest = Math.max(...posts.map((p) => +new Date(p.created_time)));
+  const weakest_posts = posts
+    .filter((p) => !p.is_boosted && p.photo_url && (p.message || '').trim().length >= 20 && newest - +new Date(p.created_time) <= WEAK_WINDOW_DAYS * 86400_000)
+    .sort((a, b) => a.engagement_score - b.engagement_score || +new Date(b.created_time) - +new Date(a.created_time)).slice(0, 5)
+    .map((p) => ({ id: p.id, caption: (p.message || '').slice(0, 200), photo_url: p.photo_url, engagement_score: Number(p.engagement_score), created_time: p.created_time }));
+  return { patterns, intents, top_posts, weakest_posts, classified_comments: comments.length };
 }
 
 // Written in code, not by the model, so the numbers are exact: when many comments ask the price,
@@ -273,7 +281,7 @@ function priceAction({ price }) {
 
 // Everything the screen needs, computed from current data (plus optional per-visitor boosted overrides).
 async function assemble(pageId, overrides) {
-  const { patterns, intents, top_posts, classified_comments } = await compute(pageId, overrides);
+  const { patterns, intents, top_posts, weakest_posts, classified_comments } = await compute(pageId, overrides);
   let summary = null;
   let failed = 0;
   if (patterns.dimensions.length) {
@@ -286,7 +294,7 @@ async function assemble(pageId, overrides) {
       }
     } catch (e) { failed = 1; console.error('playbook explanation failed:', e.status ?? '', JSON.stringify(e.error ?? e.message)); }
   }
-  return { data: { ...patterns, intents, top_posts, classified_comments }, summary, failed };
+  return { data: { ...patterns, intents, top_posts, weakest_posts, classified_comments }, summary, failed };
 }
 
 // One build at a time per page: a second request waits for the first, then rebuilds with fresh data.

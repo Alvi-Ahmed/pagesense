@@ -1,8 +1,8 @@
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
-export async function request(path, body) {
+export async function request(path, body, method = 'POST') {
   const res = await fetch(`${API_URL}${path}`, body && {
-    method: 'POST',
+    method,
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   })
@@ -14,3 +14,4 @@ export async function request(path, body) {
 }
 export const get = (path) => request(path)
 export const post = request
+export const patch = (path, body) => request(path, body, 'PATCH')

@@ -8,7 +8,7 @@ import fs from 'node:fs';
 import { db } from '../src/db.js';
 import { graph, paginate } from '../src/facebook.js';
 import { markAnswered } from '../src/sync.js';
-import { findPersonalNames } from './lib/names.js';
+import { findPersonalNames } from '../src/names.js';
 
 const NEWEST = 150;
 const WHOLE_HISTORY_UNDER = 300;

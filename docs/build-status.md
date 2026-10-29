@@ -36,6 +36,7 @@ Status: DONE / PARTIAL / MISSING. Update this file after each item.
    only; any number not in the data is rejected and retried. Cached in playbooks, rebuilt as the last
    analysis stage and whenever a post's boosted flag changes.
    GET /pages/:id/playbook, POST /pages/:id/posts/:postId/boosted, GET /pages/:id/replies.
+   Also lists the 5 weakest recent posts (weakest_posts) for "Improve this post".
    Demo mode is read-only: boosted toggles stay in the visitor's tab and POST /pages/demo/playbook/preview
    computes the result in memory. Demo tag/analysis/boosted writes are refused.
    Sanity guard: a pattern needs 10+ posts and at most 10x the typical post to be the headline; anything
@@ -45,23 +46,37 @@ Status: DONE / PARTIAL / MISSING. Update this file after each item.
    editable, status in stock / pre-order / sold out.
 7. MISSING: Orders: orders and leads from comments, missing details flagged, owner confirmation.
 8. MISSING: Sold-out updates: suggested caption updates for posts featuring a sold-out product.
-9. MISSING: Post generation: POST /pages/:id/posts/generate (Bangla/English/Banglish, styled on
-   best captions, "why this works", placeholders like [PRICE] for missing facts) and
-   POST /pages/:id/posts/improve.
+9. DONE: Post generation. POST /pages/:id/posts/generate (product from post_tags or free text; bangla |
+   english | banglish) and POST /pages/:id/posts/improve (existing post or pasted caption), muse-spark-1.3.
+   The model gets the playbook's patterns and actions, 5 of the page's best captions as style (top 2% viral
+   posts skipped, boosted excluded, contacts and person names removed) and only the product facts the photo tags
+   give. Returns caption, "why this works" (each reason cites a playbook pattern and must mention it) or
+   "what changed and why", and the patterns used. Enforced in code, rejected and retried up to 3 times:
+   unknown facts only as [PRICE] [SIZES] [COLORS] [DELIVERY CHARGE] [STOCK]; every number must come from the
+   product facts; no invented sizes, colors, free delivery, refund/exchange policies; price or [PRICE] when 20%+
+   of comments ask the price; no links, @mentions, markdown or person names; right script for the language.
+   No comment text is ever sent to the model (only aggregate counts from the playbook).
+   Drafts: real pages store them in post_drafts (details in its `why` jsonb, no new migration);
+   GET /pages/:id/drafts, PATCH /pages/:id/drafts/:id. Demo: generation allowed, 20 per visitor per hour
+   (429 after that), drafts stay in the visitor's tab, nothing is written to the database.
 10. MISSING: Branding: product phrase from muse-spark → SAM 3.1 box (fallback "person", then
     "product") → logo and price badge composited with sharp; product pixels never altered.
 11. MISSING: Publishing approved posts through the Graph API.
-12. PARTIAL: API endpoints for all of the above.
+12. PARTIAL: API endpoints for all of the above (done through item 9).
 
 ## Frontend (match docs/design/*.png)
 13. DONE: App shell, 5-tab bottom nav, analysis progress banner with retry.
-14. DONE: Home: "Post this today" card from the playbook, counts from comment intents, "Needs your
+14. DONE: Home: "Post this today" card from the playbook (with "Create this post"), drafts, counts from comment intents, "Needs your
     reply" list (complaints and orders first; comments the page already answered are left out once the
     sync has recorded authors, see item 1). The demo has no author data, so it cannot mark answered.
 15. DONE: Playbook screen: headline, strongest pattern with bar comparison, more findings, what
     customers ask before buying, Do this next, "Was this boosted?" toggles, all other patterns.
     Built from the written spec: docs/design/playbook.png is not in the repo, so check it against the mockup.
-16. MISSING: Create post screen.
+16. DONE: Create screen: product picker (from tags) or describe it yourself, language toggle that regenerates,
+    editable caption, placeholders highlighted with inline fields to fill them, why-this-works chips, Regenerate,
+    Copy caption, Schedule / Post to page disabled with a coming-soon note (item 11). "Improve this post" on the
+    Playbook's weakest recent posts; Home's "Create this post" prefills the playbook suggestion; drafts on Home.
+    Built from the written spec: docs/design/create.png is not in the repo. Branded photo comes with item 10.
 17. MISSING: Orders screen.
 18. MISSING: Catalog screen.
 19. DONE: Demo mode (anonymized snapshot, same endpoints as real mode, read-only). Snapshot: newest 150
@@ -72,3 +87,6 @@ Status: DONE / PARTIAL / MISSING. Update this file after each item.
 
 ## Build order for what's left
 4 → 5 + 15 → 14 → 9 + 16 → 6 + 18 → 8 → 7 + 17 → 10 → 11 → 20
+
+Known: demo post photos are Facebook image links and some show the real shop's name, phone number and website
+printed in the image itself. demo:scan checks text only.

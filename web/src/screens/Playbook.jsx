@@ -1,4 +1,4 @@
-import { useOutletContext } from 'react-router-dom'
+import { Link, useOutletContext } from 'react-router-dom'
 import { usePlaybook } from '../usePlaybook'
 import { EmptyState, ErrorState, ScreenHeader, Skeleton } from '../components/ui'
 
@@ -166,6 +166,27 @@ export function Playbook() {
               </li>
             ))}
           </ol>
+        </Card>
+      )}
+
+      {data.weakest_posts?.length > 0 && (
+        <Card title="Posts that could do better">
+          <p className="text-sm text-muted">Recent posts with the least engagement. We rewrite the caption using what works on your page.</p>
+          <ul className="flex flex-col gap-3">
+            {data.weakest_posts.map((p) => (
+              <li key={p.id} className="flex items-center gap-3">
+                <img src={p.photo_url} alt="" loading="lazy" className="size-14 shrink-0 rounded-btn bg-track object-cover" />
+                <div className="min-w-0 flex-1">
+                  <p className="line-clamp-2 text-sm">{p.caption}</p>
+                  <p className="text-xs text-muted">{Math.round(p.engagement_score)} engagement</p>
+                </div>
+                <Link to="/create" state={{ improvePostId: p.id }}
+                  className="flex min-h-11 shrink-0 items-center rounded-btn border border-accent px-3 text-xs font-bold text-accent-dark no-underline">
+                  Improve this post
+                </Link>
+              </li>
+            ))}
+          </ul>
         </Card>
       )}
 

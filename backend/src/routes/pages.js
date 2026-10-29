@@ -7,6 +7,8 @@ import { db } from '../db.js';
 import { startAnalysis, latestAnalysis } from '../analysis.js';
 import { latestPlaybook, previewPlaybook, setBoosted } from '../playbook.js';
 import { needsReply } from '../replies.js';
+import { generatePost, improvePost, listDrafts, listProducts, saveDraft, updateDraft } from '../generate.js';
+import { rateLimit } from '../rateLimit.js';
 
 const router = Router();
 
@@ -92,6 +94,59 @@ router.post('/:id/playbook/preview', async (req, res) => {
   try {
     if (req.params.id !== DEMO_PAGE_ID) return res.status(400).json({ error: 'Preview is only for the demo page' });
     res.json(await previewPlaybook(req.params.id, req.body.boosted));
+  } catch (err) {
+    console.error(err.message);
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
+// ---- post generation (items 9 and 16) ----------------------------------------------------------
+// Generation spends model credits, so it is rate limited: the public demo per visitor, a real page per page.
+const GENERATIONS_PER_HOUR = { demo: 20, page: 60 };
+const generationLimit = rateLimit(
+  (req) => (req.params.id === DEMO_PAGE_ID ? `demo:${req.ip}` : `page:${req.params.id}`),
+  (req) => (req.params.id === DEMO_PAGE_ID ? GENERATIONS_PER_HOUR.demo : GENERATIONS_PER_HOUR.page),
+);
+
+// Real pages keep their drafts in post_drafts. The demo is read-only: its drafts live in the visitor's browser.
+const respondWithDraft = async (req, res, make) => {
+  try {
+    const result = await make();
+    const draft = req.params.id === DEMO_PAGE_ID ? null : await saveDraft(req.params.id, result);
+    res.json({ ...result, draft_id: draft?.id ?? null });
+  } catch (err) {
+    console.error(err.message);
+    res.status(err.status || 500).json({ error: err.message });
+  }
+};
+
+router.get('/:id/posts/products', async (req, res) => {
+  try {
+    res.json({ products: await listProducts(req.params.id) });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/:id/posts/generate', requireManager, generationLimit, (req, res) =>
+  respondWithDraft(req, res, () => generatePost(req.params.id, req.body)));
+
+router.post('/:id/posts/improve', requireManager, generationLimit, (req, res) =>
+  respondWithDraft(req, res, () => improvePost(req.params.id, req.body)));
+
+router.get('/:id/drafts', async (req, res) => {
+  try {
+    res.json({ drafts: req.params.id === DEMO_PAGE_ID ? [] : await listDrafts(req.params.id) });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.patch('/:id/drafts/:draftId', rejectDemoWrites, requireManager, async (req, res) => {
+  try {
+    res.json(await updateDraft(req.params.id, req.params.draftId, req.body.caption));
   } catch (err) {
     console.error(err.message);
     res.status(err.status || 500).json({ error: err.message });
