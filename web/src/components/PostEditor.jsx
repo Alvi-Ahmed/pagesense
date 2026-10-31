@@ -115,6 +115,23 @@ export function PostEditor({ result, photo, onCaption, onSaveEdit, onRegenerate,
         </Card>
       )}
 
+      {result.trace?.length > 0 && (
+        <details className="rounded-card border border-line bg-white px-4 py-3.5">
+          <summary className="min-h-11 cursor-pointer text-[15px] font-bold leading-[44px]">How this post was made</summary>
+          <ol className="flex flex-col gap-2 pb-1 text-sm">
+            {result.trace.map((t) => (
+              <li key={t.n} className="flex gap-2">
+                <span aria-hidden className={`w-4 shrink-0 font-bold ${t.ok ? 'text-accent' : 'text-warn'}`}>{t.ok ? '✓' : '!'}</span>
+                <span>{t.text}</span>
+              </li>
+            ))}
+          </ol>
+          {result.agent_mode === 'fallback' && (
+            <p className="mt-1 text-xs text-muted">The standard writer finished this one, with the same rules checked.</p>
+          )}
+        </details>
+      )}
+
       <div className="flex flex-col gap-2.5">
         {saveSlot}
         <button onClick={copy} className={`min-h-12 rounded-btn px-5 text-[15px] font-bold ${saveSlot ? 'border border-line bg-white' : 'bg-accent text-white'}`}>

@@ -40,6 +40,6 @@ export function fromDraft(d) {
     kind: details.kind || 'generate', caption: d.caption, language: d.language, photo_url: d.photo_url,
     source_post_id: d.source_post_id, why: details.why || [], changes: details.changes || [],
     original_caption: details.original_caption || null, product: details.product || null,
-    placeholders: details.placeholders || [], draft_id: d.id,
+    placeholders: details.placeholders || [], trace: details.trace || [], agent_mode: details.agent_mode, draft_id: d.id,
   }
 }

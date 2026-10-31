@@ -234,7 +234,7 @@ export function CreateNew({ session }) {
 
       {busy === 'generating' && (
         <div role="status" className="flex flex-col gap-2.5">
-          <p className="text-sm text-muted">Writing your post. This can take up to 30 seconds.</p>
+          <p className="text-sm text-muted">Writing your post. We read your page, write it, then check every rule, so this takes about 30 to 90 seconds.</p>
           <Skeleton className="h-40" />
         </div>
       )}

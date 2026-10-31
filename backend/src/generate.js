@@ -1,6 +1,8 @@
 import { db } from './db.js';
 import { clip, completeJSON } from './ai.js';
-import { latestPlaybook } from './playbook.js';
+import { INTENT_LABELS, latestPlaybook } from './playbook.js';
+import { MAX_TOOL_CALLS, runAgent } from './agent.js';
+import { randomUUID } from 'node:crypto';
 import { findPersonalNames } from './names.js';
 import { showableUrl } from './photos.js';
 
@@ -305,7 +307,141 @@ ${problems?.length ? `\nYOUR PREVIOUS ANSWER WAS REJECTED. Fix these problems:\n
 }
 
 // ---- running a request ---------------------------------------------------------------------
-async function runWithChecks({ build, schema, schemaName, validateShape, extraCheck, language, allowedNumbers, knownText, priceRequired, ctxJson, forbiddenNames, rules = {} }) {
+// ---- agent: tool helpers ----------------------------------------------------------------------
+const median = (xs) => { if (!xs.length) return 0; const a = [...xs].sort((x, y) => x - y); const m = a.length >> 1; return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2; };
+const statsCache = new Map(); // pageId -> { at, byType }
+
+// How the page's earlier posts did, per product type (from the photo tags). Totals only.
+async function typeStats(pageId) {
+  const hit = statsCache.get(pageId);
+  if (hit && Date.now() - hit.at < 600_000) return hit.byType;
+  const rows = await fetchAll(() => db.from('post_tags')
+    .select('product_type, worn_or_flat, price_shown, offer_type, posts!inner(page_id, engagement_score, is_boosted)')
+    .eq('posts.page_id', pageId).order('post_id'));
+  const groups = new Map();
+  for (const r of rows) {
+    const type = r.product_type?.trim().toLowerCase();
+    if (!type || type === 'none' || r.posts.is_boosted) continue;
+    if (!groups.has(type)) groups.set(type, []);
+    groups.get(type).push(r);
+  }
+  const byType = new Map([...groups].map(([type, list]) => {
+    const offers = {};
+    for (const r of list) if (r.offer_type && r.offer_type !== 'none') offers[r.offer_type] = (offers[r.offer_type] || 0) + 1;
+    return [type, {
+      product_type: type, posts: list.length, median_engagement: Math.round(median(list.map((r) => Number(r.posts.engagement_score))) * 10) / 10,
+      flat_photo_pct: Math.round((list.filter((r) => r.worn_or_flat === 'flat').length / list.length) * 100),
+      price_shown_pct: Math.round((list.filter((r) => r.price_shown).length / list.length) * 100),
+      common_offers: Object.entries(offers).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([o]) => o.replaceAll('_', ' ')),
+    }];
+  }));
+  statsCache.set(pageId, { at: Date.now(), byType });
+  return byType;
+}
+
+async function similarProducts(pageId, query) {
+  const q = String(query ?? '').toLowerCase().trim();
+  const byType = await typeStats(pageId);
+  const words = q.split(/\s+/).filter((w) => w.length >= 3);
+  const matches = [...byType.values()]
+    .filter((g) => g.product_type === q || g.product_type.includes(q) || q.includes(g.product_type) || words.some((w) => g.product_type.includes(w)))
+    .sort((a, b) => (b.product_type === q) - (a.product_type === q) || b.posts - a.posts).slice(0, 4);
+  return { searched_for: q || null, matches };
+}
+
+// Counts and shares only: no comment text, no names ever reach the model.
+function customerQuestions(pbData) {
+  const total = pbData.classified_comments || 0;
+  const questions = Object.entries(pbData.intents || {}).filter(([k]) => !['other', 'praise'].includes(k))
+    .map(([k, n]) => ({ question: INTENT_LABELS[k] ?? k, comments: n, share_pct: total ? Math.round((n / total) * 1000) / 10 : 0 }))
+    .sort((a, b) => b.comments - a.comments);
+  return { comments_read: total, price_question_share_pct: pbData.price?.share_pct ?? 0, questions };
+}
+
+const agentEnabled = () => process.env.AGENT_MODE !== 'off'; // kill switch: back to the single-call writer
+
+// The task for the agent and the read-only tools it can call. check_draft is added by runWithChecks, so the tool,
+// the final verification and the single-call fallback all run the very same checks.
+function makeAgent({ pageId, kind, facts, analysis, ctx, examples, pbData, language, priceRequired, extra, hint, original, productType }) {
+  if (!agentEnabled()) return undefined;
+  const improving = kind === 'improve';
+  const languageRule = language ? LANGUAGE_RULE[language] : 'Write in the same language and script as the original caption.';
+  const answer = improving
+    ? '{"caption": "...", "changes": [{"change": "...", "reason": "...", "ref": "P1"}]}  (1 to 3 changes)'
+    : '{"caption": "...", "why": [{"ref": "P1", "reason": "..."}]}  (2 or 3 reasons that cite different refs)';
+  const prompt = `You write Facebook posts for a small seller in Bangladesh, in the seller's own voice.
+
+TASK: ${improving ? 'Improve the ORIGINAL CAPTION below. Keep every true fact in it, add no new facts.' : 'Write ONE new post for this product.'}
+${improving ? `ORIGINAL CAPTION:\n${JSON.stringify(clip(original, 1200))}\n` : ''}
+KNOWN FACTS (nothing else is known; null means unknown):
+${JSON.stringify(facts)}
+${hint ? `\nOWNER'S BRIEF (a topic from the playbook, not a fact): ${JSON.stringify(clip(hint, 300))}\n` : ''}
+${rulesBlock(ctx, languageRule, priceRequired, extra)}
+
+HOW TO WORK. You may make at most ${MAX_TOOL_CALLS} tool calls in total, check_draft included, so do not waste them:
+1. Learn with the tools. Always call get_playbook_patterns (the ids P1, P2, A1... are what your reasons must cite) and get_best_captions. Call analyze_photo, find_similar_products and get_customer_questions when they help.
+2. Write the caption.
+3. Call check_draft with your caption and your ${improving ? 'changes' : 'why'}. If it fails, fix exactly the problems it lists and call check_draft again.
+4. Only when check_draft has passed, reply with ONLY this JSON, using the same caption you checked: ${answer}
+Never reply with a caption that has not passed check_draft.`;
+
+  const photoFacts = () => {
+    if (analysis) {
+      return {
+        available: true, source: 'the uploaded photos', product_type: analysis.product_type, product_phrase: analysis.product_phrase,
+        suggested_name: analysis.suggested_name, colors: analysis.colors.map((c) => `${c.name} (${c.confidence})`), style: analysis.style,
+        photos: analysis.photos.map((p) => ({ photo: p.index + 1, worn_or_flat: p.worn_or_flat, background: p.background, problems: p.quality_issues.map((q) => q.issue) })),
+        guesses_not_facts: analysis.guesses.map((g) => `${g.field}: ${g.value}`),
+      };
+    }
+    return facts?.looks_like
+      ? { available: true, source: "your page's photo tags", product_type: facts.product_type, product_phrase: facts.looks_like, photo_style: facts.photo_style }
+      : { available: false };
+  };
+  return {
+    pageId, prompt,
+    shape: (d) => typeof d?.caption === 'string' && Array.isArray(improving ? d.changes : d.why),
+    impls: {
+      analyze_photo: async () => photoFacts(),
+      get_playbook_patterns: async () => ({ patterns: ctx.patterns, actions: ctx.actions }),
+      find_similar_products: async (args) => similarProducts(pageId, args.product_type || productType || facts?.product_type),
+      get_customer_questions: async () => customerQuestions(pbData),
+      get_best_captions: async () => ({ captions: examples }),
+    },
+  };
+}
+
+async function runWithChecks({ build, schema, schemaName, validateShape, extraCheck, language, allowedNumbers, knownText, priceRequired, ctxJson, forbiddenNames, rules = {}, agent }) {
+  // every check in one place: the check_draft tool, the final verification and the fallback below all call this
+  const checkAll = (caption, data) => {
+    const langForCheck = language || (bengaliShare(caption) > 0.4 ? 'bangla' : 'english');
+    try {
+      return [
+        ...checkCaption(caption, { allowedNumbers, knownText, priceRequired, language: langForCheck, forbiddenNames, ...rules }),
+        ...extraCheck({ ...data, caption }, ctxJson),
+      ];
+    } catch { return ['the reasons are not in the expected format']; }
+  };
+  let trace = [];
+  if (agent) {
+    try {
+      const r = await runAgent({
+        runId: randomUUID().slice(0, 8), pageId: agent.pageId, prompt: agent.prompt, shape: agent.shape,
+        impls: {
+          ...agent.impls,
+          check_draft: async (args) => {
+            const problems = checkAll(String(args.caption ?? '').trim(), { why: args.why, changes: args.changes });
+            return { pass: problems.length === 0, problems };
+          },
+        },
+        check: checkAll,
+      });
+      return { data: r.data, caption: r.caption, attempts: 1, trace: r.trace, mode: 'agent' };
+    } catch (e) {
+      console.error(JSON.stringify({ agent: true, event: 'fallback', pageId: agent.pageId, reason: e.message, status: e.status ?? null }));
+      trace = [...(e.trace || []), { n: (e.trace?.length ?? 0) + 1, tool: 'fallback', ok: false, ms: 0, text: `The step-by-step writer stopped (${e.plain || 'it ran into a problem'}), so the standard writer finished the job.` }];
+    }
+  }
   let problems = [];
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     const { data } = await completeJSON('post_generation', {
@@ -318,7 +454,7 @@ async function runWithChecks({ build, schema, schemaName, validateShape, extraCh
       ...checkCaption(caption, { allowedNumbers, knownText, priceRequired, language: langForCheck, forbiddenNames, ...rules }),
       ...extraCheck(data, ctxJson),
     ];
-    if (!problems.length) return { data, caption, attempts: attempt };
+    if (!problems.length) return { data, caption, attempts: attempt, trace, mode: agent ? 'fallback' : 'single' };
     console.error(`generation rejected (attempt ${attempt}/${MAX_ATTEMPTS}):`, problems.join(' | '));
   }
   throw fail(`Could not write a caption that follows the rules after ${MAX_ATTEMPTS} tries. Please try again.`, 422);
@@ -333,7 +469,7 @@ async function loadContext(pageId) {
   if (!ctx.patterns.length && !ctx.actions.length) throw fail('The playbook has no patterns to write from yet.', 409);
   const { examples, names } = await styleExamples(pageId);
   if (!examples.length) throw fail('This page has no captions to learn the style from yet.', 409);
-  return { ctx, examples, names, priceRequired: ctx.price_question_share_pct >= PRICE_ALERT_PCT, ctxJson: JSON.stringify(ctx) };
+  return { ctx, examples, names, pbData: pb.data, priceRequired: ctx.price_question_share_pct >= PRICE_ALERT_PCT, ctxJson: JSON.stringify(ctx) };
 }
 
 const checkWhy = (data, ctxJson, ctx) => {
@@ -352,21 +488,24 @@ export async function generatePost(pageId, { productKey, description, language, 
   if (!LANGUAGES.includes(language)) throw fail(`language must be one of ${LANGUAGES.join(', ')}`);
   const text = clip(String(description ?? '').trim(), 600);
   if (!productKey && !text) throw fail('Pick a product or describe what you are selling.');
-  const { ctx, examples, names, priceRequired, ctxJson } = await loadContext(pageId);
+  const { ctx, examples, names, pbData, priceRequired, ctxJson } = await loadContext(pageId);
 
   let facts;
   let product = null;
+  let productType = null;
   if (productKey) {
     const group = (await productGroups(pageId)).find((g) => g.type === String(productKey).toLowerCase());
     if (!group) throw fail('That product was not found on this page.', 404);
     facts = knownFacts(group);
+    productType = group.type;
     product = productView(group);
     if (text) facts.owner_notes = text;
   } else {
     facts = { description_from_owner: text };
   }
   const factsJson = JSON.stringify(facts);
-  const { data, caption, attempts } = await runWithChecks({
+  const { data, caption, attempts, trace, mode } = await runWithChecks({
+    agent: makeAgent({ pageId, kind: 'generate', facts, analysis: null, ctx, examples, pbData, language, priceRequired, hint, productType }),
     build: (problems) => generatePrompt({ ctx, examples, facts, language, priceRequired, hint, problems }),
     schema: GENERATE_SCHEMA, schemaName: 'post_caption',
     validateShape: (d) => { if (typeof d?.caption !== 'string' || !Array.isArray(d.why)) throw new Error('answer is missing caption or why'); },
@@ -374,7 +513,7 @@ export async function generatePost(pageId, { productKey, description, language, 
     language, allowedNumbers: numbersIn(factsJson), knownText: factsJson, priceRequired, ctxJson, forbiddenNames: names,
   });
   return {
-    kind: 'generate', caption, language, product, attempts,
+    kind: 'generate', caption, language, product, attempts, trace, agent_mode: mode,
     why: data.why.map((w) => ({ ref: w.ref, reason: w.reason, pattern: ctx.patterns.find((p) => p.id === w.ref) || null, action: ctx.actions.find((a) => a.id === w.ref)?.text || null })),
     patterns_used: usedPatterns(ctx, data.why.map((w) => w.ref)),
     placeholders: [...new Set([...caption.matchAll(/\[([^\]]+)\]/g)].map((m) => m[1]))],
@@ -411,7 +550,7 @@ function newProductFacts(f, analysis) {
 export async function generateNewProduct(pageId, { form, analysis, language }) {
   if (!LANGUAGES.includes(language)) throw fail(`language must be one of ${LANGUAGES.join(', ')}`);
   const f = parseProductForm(form);
-  const { ctx, examples, names, ctxJson } = await loadContext(pageId);
+  const { ctx, examples, names, pbData, ctxJson } = await loadContext(pageId);
   const facts = newProductFacts(f, analysis);
   const factsJson = JSON.stringify(facts);
   const missing = [!f.sizes.length && 'SIZES', !f.colors.length && 'COLORS', f.stock === null && 'STOCK'].filter(Boolean);
@@ -424,7 +563,8 @@ export async function generateNewProduct(pageId, { form, analysis, language }) {
       'Do not claim availability (pre-order, limited stock, sold out, in stock) unless it is in the known facts.',
     ],
   };
-  const { data, caption, attempts } = await runWithChecks({
+  const { data, caption, attempts, trace, mode } = await runWithChecks({
+    agent: makeAgent({ pageId, kind: 'new_product', facts, analysis, ctx, examples, pbData, language, priceRequired: false, extra }),
     build: (problems) => generatePrompt({ ctx, examples, facts, language, priceRequired: false, problems, extra }),
     schema: GENERATE_SCHEMA, schemaName: 'post_caption',
     validateShape: (d) => { if (typeof d?.caption !== 'string' || !Array.isArray(d.why)) throw new Error('answer is missing caption or why'); },
@@ -433,7 +573,7 @@ export async function generateNewProduct(pageId, { form, analysis, language }) {
     rules: { requiredPrice: String(f.price), requiredPlaceholders: missing, noOffer: !f.offer, stockKnown: f.stock !== null, requiredNumbers: f.offer ? [...numbersIn(f.offer)] : [] },
   });
   return {
-    kind: 'generate', caption, language, attempts, product: { name: f.name, ...f },
+    kind: 'generate', caption, language, attempts, trace, agent_mode: mode, product: { name: f.name, ...f },
     why: data.why.map((w) => ({ ref: w.ref, reason: w.reason, pattern: ctx.patterns.find((p) => p.id === w.ref) || null, action: ctx.actions.find((a) => a.id === w.ref)?.text || null })),
     patterns_used: usedPatterns(ctx, data.why.map((w) => w.ref)),
     placeholders: [...new Set([...caption.matchAll(/\[([^\]]+)\]/g)].map((m) => m[1]))],
@@ -455,7 +595,7 @@ export async function improvePost(pageId, { postId, caption, language }) {
   }
   original = stripAliases(original);
   if (original.length < 10) throw fail('That post has no caption to improve.');
-  const { ctx, examples, names: exampleNames, priceRequired, ctxJson } = await loadContext(pageId);
+  const { ctx, examples, names: exampleNames, pbData, priceRequired, ctxJson } = await loadContext(pageId);
   // names tagged in the original caption are not facts to keep: they are removed before the model sees it
   const cleaned = await removeNames([original]);
   original = cleaned.texts[0];
@@ -468,7 +608,8 @@ export async function improvePost(pageId, { postId, caption, language }) {
   }
   const factsText = `${JSON.stringify(facts)} ${original}`; // numbers, sizes and colors already in the caption are known facts
   const lang = language || null;
-  const { data, caption: improved, attempts } = await runWithChecks({
+  const { data, caption: improved, attempts, trace, mode } = await runWithChecks({
+    agent: makeAgent({ pageId, kind: 'improve', facts, analysis: null, ctx, examples, pbData, language: lang, priceRequired, original }),
     build: (problems) => improvePrompt({ ctx, examples, facts, language: lang, priceRequired, original, problems }),
     schema: IMPROVE_SCHEMA, schemaName: 'improved_caption',
     validateShape: (d) => { if (typeof d?.caption !== 'string' || !Array.isArray(d.changes)) throw new Error('answer is missing caption or changes'); },
@@ -484,7 +625,7 @@ export async function improvePost(pageId, { postId, caption, language }) {
     language: lang, allowedNumbers: numbersIn(factsText), knownText: factsText, priceRequired, ctxJson, forbiddenNames,
   });
   return {
-    kind: 'improve', caption: improved, language: lang || detectLanguage(improved), attempts,
+    kind: 'improve', caption: improved, language: lang || detectLanguage(improved), attempts, trace, agent_mode: mode,
     original_caption: original,
     changes: data.changes.map((c) => ({ change: c.change, reason: c.reason, ref: c.ref, pattern: ctx.patterns.find((p) => p.id === c.ref) || null })),
     patterns_used: usedPatterns(ctx, data.changes.map((c) => c.ref)),

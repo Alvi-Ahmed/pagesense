@@ -85,3 +85,19 @@ export async function completeJSON(taskName, params, { validate, provider, fallb
     return { ...result, fellBackFrom: name };
   }
 }
+
+// One turn of a tool-calling conversation on muse-spark-1.3 (Meta API). Per dev.meta.ai/docs/tool-calling:
+// tools are {type:"function", function:{name, description, parameters}}, tool_choice only supports "auto", and
+// parallel_tool_calls:false limits the model to one call per turn. response_format is not combined with tools
+// (the docs do not say it works), so callers read the final answer as JSON text. Reasoning comes back redacted
+// and does not have to be sent again. A lower reasoning effort keeps a many-turn loop fast.
+export async function chatWithTools(params) {
+  const p = PROVIDERS.meta;
+  return p.client.chat.completions.create({
+    ...params, model: p.model, tool_choice: 'auto', parallel_tool_calls: false,
+    reasoning_effort: process.env.AGENT_REASONING_EFFORT || 'low',
+  });
+}
+
+// What the model wrote as its final answer (no tool calls), same rules as everywhere else.
+export const answerText = finalAnswer;

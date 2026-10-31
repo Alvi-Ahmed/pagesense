@@ -59,6 +59,15 @@ Status: DONE / PARTIAL / MISSING. Update this file after each item.
    Drafts: real pages store them in post_drafts (details in its `why` jsonb, no new migration);
    GET /pages/:id/drafts, PATCH /pages/:id/drafts/:id. Demo: generation allowed, 20 per visitor per hour
    (429 after that), drafts stay in the visitor's tab, nothing is written to the database.
+   AGENT LOOP (src/agent.js): all generation (existing product, new product, improve) runs as a tool-calling loop on
+   muse-spark-1.3 (Meta API format: tools=[{type:function,function:{...}}], tool_choice auto, parallel_tool_calls
+   false, full assistant message + role:tool results; response_format is not combined with tools). Read-only
+   tools: analyze_photo, get_playbook_patterns, find_similar_products, get_customer_questions (counts only, never
+   comment text or names), get_best_captions, check_draft. check_draft runs the same grounding checks as the
+   single-call writer; the final caption must be the exact one check_draft passed and is verified again. Max 8
+   tool calls per run; hitting the limit or any error falls back to the single-call writer. Every step is logged
+   as a JSON line ("agent":true) and returned as `trace` (plain-language steps) with agent_mode agent | fallback.
+   Costs about 3x the single call and takes 15-70 s. AGENT_MODE=off switches back to the single call.
    NEW PRODUCT FROM PHOTOS (the main way to create): POST /pages/:id/uploads (1 raw photo, 10 MB max; EXIF and
    location removed with sharp, stored privately in Supabase Storage bucket product-photos, shown through signed
    links), POST /pages/:id/products/analyze (1-5 photos -> muse-spark: product type and phrase, suggested name,
@@ -90,7 +99,7 @@ Status: DONE / PARTIAL / MISSING. Update this file after each item.
     Secondary: "post about a product you already sell": product picker (from tags) or describe it yourself, language toggle that regenerates,
     editable caption, placeholders highlighted with inline fields to fill them, why-this-works chips, Regenerate,
     Copy caption, Schedule / Post to page disabled with a coming-soon note (item 11). "Improve this post" on the
-    Playbook's weakest recent posts; Home's "Create this post" prefills the playbook suggestion; drafts on Home.
+    Playbook's weakest recent posts; collapsible "How this post was made" shows the agent's steps; Home's "Create this post" prefills the playbook suggestion; drafts on Home.
     Built from the written spec: docs/design/create.png is not in the repo. Branded photo comes with item 10.
 17. MISSING: Orders screen.
 18. MISSING: Catalog screen.
