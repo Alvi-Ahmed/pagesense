@@ -71,7 +71,7 @@ Status: DONE / PARTIAL / MISSING. Update this file after each item.
    NEW PRODUCT FROM PHOTOS (the main way to create): POST /pages/:id/uploads (1 raw photo, 10 MB max; EXIF and
    location removed with sharp, stored privately in Supabase Storage bucket product-photos, shown through signed
    links), POST /pages/:id/products/analyze (1-5 photos -> muse-spark: product type and phrase, suggested name,
-   colors with confidence, style, per-photo worn/flat, background and quality issues; material and brand are
+   colors with confidence, style, per-photo worn/flat, background and quality issues, judged like a strict photographer: clutter, collages, glare, cut-off products, and text in the background is never taken as the brand; material and brand are
    only ever "guesses" at low confidence and are stripped from the phrase and name; plus up to 2 photo tips
    computed in code from the playbook's worn/flat and background groups, only groups with 10+ posts and at
    most 10x typical, each with both median engagements and post counts), POST /pages/:id/posts/generate with

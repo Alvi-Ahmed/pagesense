@@ -72,6 +72,8 @@ Return:
 - colors: the main visible colors, each with a confidence (high, medium or low)
 - style: a few words, e.g. "casual", "party wear", "sporty"
 - guesses: things you CANNOT see for certain: material (cotton? leather?), brand, pattern name, fit. Each is {field, value, confidence}. Only include a guess if there is a real hint. Anything not clearly printed in the photo has confidence "low". Never state a material or brand as fact: do NOT put a material or brand word in product_phrase or suggested_name.
+- Judge the photos like a strict product photographer. Report cluttered_background whenever the background holds other objects, rumpled bedding or fabric, boxes, magazines, printed text or several items that compete with the product. Also report product_cut_off, product_too_small and glare when you see them. Do not leave quality_issues empty if any of these is visible. If a photo is a collage of several shots, add {issue: "other", detail: "collage of several shots"}.
+- Text or logos on things in the BACKGROUND (magazines, boxes, clothes, walls) are not the product's brand. Only mention a brand if it is printed on the product itself.
 - photos: one entry per photo, in order, with "index" starting at 0: worn_or_flat ("worn" if on a person or mannequin, "flat" if laid out or on a surface, else "unknown"), background (a few words), and quality_issues: list only REAL problems as {issue, detail} where issue is one of ${ISSUES.join(', ')}.`;
 
 // Material and brand are guesses: they may never leak into the phrase or the name as if known.
