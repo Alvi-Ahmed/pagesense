@@ -347,3 +347,33 @@ export async function previewPlaybook(pageId, boosted) {
   }
   return previews.get(key);
 }
+
+// ---- caption angles ---------------------------------------------------------------------------------
+// Posts published through PageSense carry the angle they were written from (db/010_angles.sql). Once an angle has 3+
+// organic posts, angles are compared on median engagement, like every other group in the playbook.
+export const ANGLE_LABELS = { answer_first: 'answer-first', showcase: 'product-first', offer: 'offer', urgency: 'urgency' };
+
+export function compareAngles(posts) {
+  const groups = new Map();
+  for (const p of posts) {
+    if (p.is_boosted || !ANGLE_LABELS[p.angle]) continue;
+    if (!groups.has(p.angle)) groups.set(p.angle, []);
+    groups.get(p.angle).push(Number(p.engagement_score));
+  }
+  const rows = [...groups].filter(([, xs]) => xs.length >= MIN_POSTS)
+    .map(([angle, xs]) => ({ angle, label: ANGLE_LABELS[angle], posts: xs.length, median_engagement: round(median(xs)) }))
+    .sort((a, b) => b.median_engagement - a.median_engagement);
+  if (rows.length < 2) return null;
+  const [best, next] = rows;
+  const n = best.posts + next.posts;
+  const text = best.median_engagement > next.median_engagement
+    ? `Your ${best.label} posts outperform your ${next.label} posts, based on ${n} posts.`
+    : `Your ${best.label} and ${next.label} posts get about the same engagement, based on ${n} posts.`;
+  return { groups: rows, text };
+}
+
+export async function angleInsight(pageId) {
+  const { data, error } = await db.from('posts').select('angle, engagement_score, is_boosted').eq('page_id', pageId).not('angle', 'is', null);
+  if (error) return null; // before db/010_angles.sql the column does not exist
+  return compareAngles(data);
+}

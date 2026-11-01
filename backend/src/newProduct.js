@@ -181,19 +181,22 @@ export async function saveNewProduct(pageId, { form, analysis, upload_ids: uploa
     page_id: pageId, name, product_type: analysis?.product_type || null, price: f.price, sizes: f.sizes, colors: f.colors,
     photo_url: photoRef, status: 'in_stock',
   };
-  const extras = { stock: f.stock, offer: f.offer, photo_paths: paths, analysis: analysis ?? null, source: 'upload' };
+  const extras = { stock: f.stock, offer: f.offer, photo_paths: paths, analysis: analysis ?? null, source: 'uploaded' };
   const hasExtras = await hasColumns('products', Object.keys(extras));
   const { data: product, error } = await db.from('products').insert(hasExtras ? { ...base, ...extras } : base).select().single();
   if (error) throw error;
 
   const linked = await hasColumns('post_drafts', ['product_id']);
-  const { id, caption: _c, language, why, patterns_used, placeholders } = { ...draft, caption }; // eslint-disable-line no-unused-vars
+  const { id, caption: _c, language, why, patterns_used, placeholders, angle, pattern, variants } = { ...draft, caption }; // eslint-disable-line no-unused-vars
+  const angled = !!angle && await hasColumns('post_drafts', ['angle', 'pattern']); // db/010_angles.sql
   const details = {
     kind: 'generate', why: why || [], patterns_used: patterns_used || [], placeholders: placeholders || [], product_id: product.id,
+    ...(angle && { angle, pattern: pattern ?? null }), ...(Array.isArray(variants) && variants.length && { variants }),
     product: { name, ...f, ...(hasExtras ? {} : { photo_paths: paths, analysis: analysis ?? null }) }, // keeps what 005 would have stored
   };
   const { data: saved, error: err } = await db.from('post_drafts').insert({
     page_id: pageId, caption, language: language || 'banglish', photo_url: photoRef, why: details, ...(linked && { product_id: product.id }),
+    ...(angled && { angle, pattern: pattern ?? null }),
   }).select().single();
   if (err) throw err;
   return { product, draft: saved, columns_missing: !hasExtras || !linked };

@@ -5,7 +5,7 @@ import { startTagging, getTagStatus } from '../tag.js';
 import { DEMO_PAGE_ID } from '../demo.js';
 import { db } from '../db.js';
 import { startAnalysis, latestAnalysis } from '../analysis.js';
-import { latestPlaybook, previewPlaybook, setBoosted } from '../playbook.js';
+import { angleInsight, latestPlaybook, previewPlaybook, setBoosted } from '../playbook.js';
 import { needsReply } from '../replies.js';
 import { hasAuthorColumns, hasColumns } from '../schema.js';
 import { generateFromCatalog, generateNewProduct, generatePost, improvePost, listDrafts, listProducts, saveDraft, updateDraft } from '../generate.js';
@@ -84,7 +84,8 @@ router.get('/:id/analysis', async (req, res) => {
 // Cached playbook from the last analysis run: { status: 'none' } until one has finished.
 router.get('/:id/playbook', async (req, res) => {
   try {
-    res.json(await latestPlaybook(req.params.id));
+    const pb = await latestPlaybook(req.params.id);
+    res.json(pb.status === 'ready' && req.params.id !== DEMO_PAGE_ID ? { ...pb, angles: await angleInsight(req.params.id) } : pb);
   } catch (err) {
     console.error(err.message);
     res.status(500).json({ error: err.message });
@@ -205,7 +206,7 @@ router.get('/:id/drafts', async (req, res) => {
 
 router.patch('/:id/drafts/:draftId', rejectDemoWrites, requireManager, async (req, res) => {
   try {
-    res.json(await updateDraft(req.params.id, req.params.draftId, req.body.caption));
+    res.json(await updateDraft(req.params.id, req.params.draftId, req.body.caption, req.body.variant));
   } catch (err) {
     console.error(err.message);
     res.status(err.status || 500).json({ error: err.message });

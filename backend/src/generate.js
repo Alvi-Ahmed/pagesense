@@ -1,4 +1,5 @@
 import { db } from './db.js';
+import { hasColumns } from './schema.js';
 import { clip, completeJSON } from './ai.js';
 import { INTENT_LABELS, latestPlaybook } from './playbook.js';
 import { getProduct as getCatalogProduct } from './catalog.js';
@@ -149,7 +150,20 @@ function playbookContext(pb) {
 const COLORS = ['red', 'blue', 'green', 'black', 'white', 'pink', 'yellow', 'purple', 'orange', 'brown', 'grey', 'gray', 'beige', 'maroon', 'navy', 'golden', 'silver', 'cream'];
 
 // Everything the caption may not do. Returns a list of problems; an empty list means it can be shown.
-export function checkCaption(caption, { allowedNumbers, knownText, priceRequired, language, forbiddenNames = [], requiredPrice = null, requiredPlaceholders = [], noOffer = false, requiredNumbers = [], stockKnown = false }) {
+// Engagement bait: asking people to comment, like, share or tag to get a reply, the price or a reward. Facebook demotes it.
+const BAIT = [
+  /\b(?:comment|cmnt|like|share|tag)\b[^.!?\n]{0,40}\b(?:to (?:get|win|see|know|receive|unlock)|and (?:get|win|receive)|for (?:the |a |your )?(?:price|chance|free|reward|prize|gift|reply|details|dm|inbox))\b/i,
+  /\b(?:comment|cmnt|type)\b[^.!?\n]{0,25}\b(?:price|details|rate|dam|yes|interested|info)\b/i,
+  /\b(?:like|share)\s*(?:&|and|\+|,)\s*(?:comment|share|like)\b/i,
+  /\b(?:comment|cmnt|like|share)\s*(?:korle|korun|koren|korben|dile|den|diye|korlei|kore)\b/i,
+  /\btag\s+(?:a|your|two|\d+)?\s*friends?\b/i,
+  /(?:কমেন্ট|লাইক|শেয়ার|ট্যাগ)\s*(?:করলে|করুন|করে|দিলে|দিন)/,
+];
+// Urgency: only real stock may be used. Any of these needs a stock count that is low (or the owner having written it).
+const URGENCY = /\bonly\s+(?:\d+|a few|few)\s+(?:pieces?|pcs|units?|pairs?|items?|sets?)?\s*(?:left|remaining)\b|\b(?:few|last)\s+(?:pieces?|pairs?|items?|left)\b|\b(?:selling|going) fast\b|\bwhile (?:stock|stocks|supplies) lasts?\b|\bhurry\b|\b(?:almost|nearly) (?:gone|sold out)\b|\bstock (?:is )?(?:running )?(?:low|ending)\b|\b(?:ends?|ending) (?:today|tonight|soon|tomorrow)\b|\blast chance\b|\b(?:matro|shudhu|sudhu)\s*\d+\s*(?:ta|pis|piece|pcs)?\s*(?:ache|achhe|baki|ase)\b|\bstock (?:sesh|shesh|kom)\b|\bshesh hoye\b|আর মাত্র|মাত্র \d+|শেষ হয়ে|স্টক শেষ|শেষ সুযোগ/giu;
+const COUNT_CLAIM = /\b(?:only|matro|shudhu|sudhu)\s*(\d+)|(?:আর )?মাত্র\s*(\d+)/giu;
+
+export function checkCaption(caption, { allowedNumbers, knownText, priceRequired, language, forbiddenNames = [], requiredPrice = null, requiredPlaceholders = [], noOffer = false, requiredNumbers = [], stockKnown = false, stockLeft = null }) {
   const problems = [];
   const text = String(caption ?? '').trim();
   if (text.length < 20) return ['the caption is empty or far too short'];
@@ -205,6 +219,18 @@ export function checkCaption(caption, { allowedNumbers, knownText, priceRequired
   }
   for (const n of requiredNumbers) {
     if (!numbersIn(withoutPlaceholders).has(n)) problems.push(`the owner's offer includes ${n}: mention the offer exactly as given`);
+  }
+  if (BAIT.some((re) => re.test(text))) problems.push('no engagement bait: do not ask people to comment, like, share or tag to get a reply, the price or a reward');
+  for (const m of new Set(withoutPlaceholders.match(URGENCY) || [])) {
+    if (stockLeft === null && !knownText.toLowerCase().includes(m.toLowerCase())) {
+      problems.push(`"${m}" is an urgency claim: it needs real low stock in the known facts, so leave it out`);
+    }
+  }
+  if (stockLeft !== null) {
+    for (const m of withoutPlaceholders.matchAll(COUNT_CLAIM)) {
+      const n = m[1] ?? m[2];
+      if (n !== String(stockLeft)) problems.push(`the stock is ${stockLeft}, not ${n}: use the exact stock number`);
+    }
   }
   const bn = bengaliShare(text);
   if (language === 'bangla' && bn < 0.4) problems.push('write in Bangla script (বাংলা)');
@@ -376,16 +402,14 @@ const agentEnabled = () => process.env.AGENT_MODE !== 'off'; // kill switch: bac
 
 // The task for the agent and the read-only tools it can call. check_draft is added by runWithChecks, so the tool,
 // the final verification and the single-call fallback all run the very same checks.
-function makeAgent({ pageId, kind, facts, analysis, ctx, examples, pbData, language, priceRequired, extra, hint, original, productType }) {
+function makeAgent({ pageId, kind, facts, analysis, ctx, examples, pbData, language, priceRequired, extra, hint, original, productType, variants = null }) {
   if (!agentEnabled()) return undefined;
   const improving = kind === 'improve';
   const languageRule = language ? LANGUAGE_RULE[language] : 'Write in the same language and script as the original caption.';
   const answer = improving
     ? '{"caption": "...", "changes": [{"change": "...", "reason": "...", "ref": "P1"}]}  (1 to 3 changes)'
     : '{"caption": "...", "why": [{"ref": "P1", "reason": "..."}]}  (2 or 3 reasons that cite different refs)';
-  const prompt = `You write Facebook posts for a small seller in Bangladesh, in the seller's own voice.
-
-TASK: ${improving ? 'Improve the ORIGINAL CAPTION below. Keep every true fact in it, add no new facts.' : 'Write ONE new post for this product.'}
+  const prompt = variants ? variantsPrompt({ ctx, facts, languageRule, priceRequired, extra, hint, variants }) : `You write Facebook posts for a small seller in Bangladesh, in the seller's own voice.\n\nTASK: ${improving ? 'Improve the ORIGINAL CAPTION below. Keep every true fact in it, add no new facts.' : 'Write ONE new post for this product.'}
 ${improving ? `ORIGINAL CAPTION:\n${JSON.stringify(clip(original, 1200))}\n` : ''}
 KNOWN FACTS (nothing else is known; null means unknown):
 ${JSON.stringify(facts)}
@@ -414,7 +438,9 @@ Never reply with a caption that has not passed check_draft.`;
   };
   return {
     pageId, prompt,
-    shape: (d) => typeof d?.caption === 'string' && Array.isArray(improving ? d.changes : d.why),
+    shape: variants
+      ? (d) => ['caption', 'angle', 'pattern', 'reason'].every((k) => typeof d?.[k] === 'string' && d[k].trim())
+      : (d) => typeof d?.caption === 'string' && Array.isArray(improving ? d.changes : d.why),
     impls: {
       analyze_photo: async () => photoFacts(),
       get_playbook_patterns: async () => ({ patterns: ctx.patterns, actions: ctx.actions }),
@@ -535,6 +561,156 @@ export async function generatePost(pageId, { productKey, description, language, 
   };
 }
 
+// ---- caption variants: one run, up to 3 captions, each with its own angle and playbook pattern ------------------
+export const ANGLES = {
+  answer_first: { label: 'Answer first', how: 'Open with the answer customers ask for most (get_customer_questions says what it is, usually the price), then the product.' },
+  showcase: { label: 'Product first', how: 'Lead with what the product is and how it looks, in the seller\'s own style. Calm, no pressure.' },
+  offer: { label: 'Offer', how: "Lead with the owner's offer, worded exactly as given in the known facts." },
+  urgency: { label: 'Urgency', how: 'Say that only a few are left, with the exact stock number from the known facts, and nothing else about time or deadlines.' },
+};
+const MAX_VARIANTS = 3;
+const VARIANT_TOOL_CALLS = 14; // 2 to learn, up to 3 checks each (a fix and a re-check), a spare
+
+// Which angles the facts allow: offer needs a real offer, urgency needs real low stock. Never more than the facts support.
+export const allowedAngles = ({ hasOffer, stockLow }) => ['answer_first', 'showcase', ...(hasOffer ? ['offer'] : []), ...(stockLow ? ['urgency'] : [])];
+
+// Playbook patterns that may back a variant: they passed the playbook's own sample-size rules (10+ posts, believable lift)
+// and beat the typical post. Ids match the P1... ids in the grounding context.
+export function qualifiedPatterns(pbData, ctx) {
+  const ranked = (pbData.ranked || []).slice(0, ctx.patterns.length);
+  // when to post is shown as the best posting time, not as a way to write the caption
+  return ctx.patterns.filter((p, i) => ranked[i] && ranked[i].posts >= 10 && ranked[i].lift > 1 && !['weekday', 'time_of_day'].includes(ranked[i].dimension));
+}
+
+// Best posting time from the playbook's weekday and time-of-day groups (same 10+ post rule), or null.
+export function bestPostingTime(pbData) {
+  const pick = (key) => {
+    const d = (pbData.dimensions || []).find((x) => x.key === key);
+    const g = d?.groups.filter((x) => x.posts >= 10 && x.lift > 1).sort((a, b) => b.median_engagement - a.median_engagement)[0];
+    return g ? { value: g.value, posts: g.posts } : null;
+  };
+  const weekday = pick('weekday');
+  const time_of_day = pick('time_of_day');
+  return weekday || time_of_day ? { weekday, time_of_day } : null;
+}
+
+// Reasons never promise reach, engagement or sales.
+const PROMISE = /\bwill (?:get|bring|boost|double|increase|reach|sell|go)\b|guarantee|\d+\s*%|\b\d+\s*x\b|\bgo viral\b|\bmore (?:likes|reach|sales|orders)\b/i;
+
+function variantsPrompt({ ctx, facts, languageRule, priceRequired, extra, hint, variants }) {
+  const angles = variants.angles.map((a) => ({ id: a, label: ANGLES[a].label, how: ANGLES[a].how }));
+  return `You write Facebook posts for a small seller in Bangladesh, in the seller's own voice.
+
+TASK: Write up to ${variants.max} DIFFERENT versions of ONE post for this product. Each version has its own ANGLE and is based on a DIFFERENT playbook pattern. The owner will pick one, so make them truly different in how they open and what they stress, not just reworded. Fewer versions is fine if you cannot make them truly different.
+ANGLES YOU MAY USE (each at most once):
+${JSON.stringify(angles)}
+${variants.angles.includes('urgency') ? 'The "urgency" angle is offered because the stock really is low: include one version with it.\n' : ''}PATTERNS YOU MAY USE (each at most once; each has enough posts behind it and did better than the typical post):
+${JSON.stringify(variants.patterns)}
+
+KNOWN FACTS (nothing else is known; null means unknown):
+${JSON.stringify(facts)}
+${hint ? `\nOWNER'S BRIEF (a topic from the playbook, not a fact): ${JSON.stringify(clip(hint, 300))}\n` : ''}
+${rulesBlock(ctx, languageRule, priceRequired, extra)}
+- Never ask people to comment, like, share or tag to get a reply, the price or a reward.
+- Never mention time limits or deadlines. Use urgency only if the angle "urgency" is offered above.
+
+HOW TO WORK. You may make at most ${VARIANT_TOOL_CALLS} tool calls in total, check_draft included:
+1. Always call get_playbook_patterns and get_best_captions. Call get_customer_questions, analyze_photo and find_similar_products when they help.
+2. Make the versions clearly different: a different opening line, a different order of the facts, a different length and tone. For each version: write the caption, then call check_draft with "caption", "angle" (an angle id), "pattern" (a pattern id such as P1) and "reason" (ONE plain sentence saying what THIS caption does because of that pattern, for example "Opens with the price, since posts that show the price did better on this page"; mention the pattern's value; no numbers except its post count; never promise reach, engagement or sales). If it fails, fix exactly what it lists and check again.
+3. Only when every version has passed check_draft, reply with ONLY this JSON, using the same captions you checked: {"variants": [{"angle": "offer", "pattern": "P1", "reason": "...", "caption": "..."}]}
+Never include a version that has not passed check_draft.`;
+}
+
+const VARIANTS_SCHEMA = {
+  type: 'object',
+  properties: {
+    variants: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: { angle: { type: 'string' }, pattern: { type: 'string' }, reason: { type: 'string' }, caption: { type: 'string' } },
+        required: ['angle', 'pattern', 'reason', 'caption'], additionalProperties: false,
+      },
+    },
+  },
+  required: ['variants'], additionalProperties: false,
+};
+
+// Runs the agent for variants (every variant checked by check_draft), or, if the agent cannot finish, the standard
+// single-call writer asked for the same set. Returns the variants that pass every check.
+async function runVariants({ agent, fallbackPrompt, language, allowedNumbers, knownText, priceRequired, ctxJson, forbiddenNames, rules, ctx, angles, patterns, max }) {
+  const patternIds = new Set(patterns.map((p) => p.id));
+  const checkMeta = (v) => {
+    if (!angles.includes(v.angle)) return [`the angle must be one of ${angles.join(', ')}`];
+    if (!patternIds.has(v.pattern)) return [`the pattern must be one of ${[...patternIds].join(', ')}`];
+    const reason = String(v.reason ?? '').trim();
+    if (!reason) return ['every variant needs a reason'];
+    if (!mentionsPattern(ctx, v.pattern, reason)) return [`the reason for ${v.pattern} must talk about "${ctx.patterns.find((p) => p.id === v.pattern).value}", the pattern it uses`];
+    if (PROMISE.test(reason)) return ['the reason must not promise reach, engagement or sales, and must not quote percentages'];
+    return checkReasons([reason], ctxJson);
+  };
+  const checkOne = (caption, v) => {
+    try {
+      const lang = language || (bengaliShare(caption) > 0.4 ? 'bangla' : 'english');
+      return [...checkCaption(caption, { allowedNumbers, knownText, priceRequired, language: lang, forbiddenNames, ...rules }), ...checkMeta(v)];
+    } catch { return ['the variant is not in the expected format']; }
+  };
+  const checkSet = (items) => {
+    if (items.length > max) return [`give at most ${max} variants`];
+    if (new Set(items.map((v) => v.angle)).size < items.length) return ['every variant needs a different angle'];
+    if (new Set(items.map((v) => v.pattern)).size < items.length) return ['every variant needs a different pattern'];
+    const words = (t) => new Set(t.toLowerCase().match(/[\p{L}\p{N}]+/gu) || []);
+    const firstLine = (t) => t.trim().split('\n')[0].toLowerCase().replace(/\s+/g, ' ');
+    for (let i = 0; i < items.length; i++) {
+      for (let j = i + 1; j < items.length; j++) {
+        const a = words(items[i].caption);
+        const b = words(items[j].caption);
+        const same = [...a].filter((w) => b.has(w)).length / Math.max(1, new Set([...a, ...b]).size);
+        if (firstLine(items[i].caption) === firstLine(items[j].caption) || same > 0.7) return [`the "${items[i].angle}" and "${items[j].angle}" variants are too alike: change how they open, their order and their wording`];
+      }
+    }
+    return [];
+  };
+  let trace = [];
+  if (agent) {
+    try {
+      const r = await runAgent({
+        runId: randomUUID().slice(0, 8), pageId: agent.pageId, prompt: agent.prompt, shape: agent.shape, check: checkOne,
+        multi: { max, maxCalls: VARIANT_TOOL_CALLS, checkSet },
+        impls: {
+          ...agent.impls,
+          check_draft: async (args) => {
+            const problems = checkOne(String(args.caption ?? '').trim(), args);
+            return { pass: problems.length === 0, problems };
+          },
+        },
+      });
+      return { variants: r.variants, trace: r.trace, mode: 'agent' };
+    } catch (e) {
+      console.error(JSON.stringify({ agent: true, event: 'fallback', pageId: agent.pageId, reason: e.message, status: e.status ?? null }));
+      trace = [...(e.trace || []), { n: (e.trace?.length ?? 0) + 1, tool: 'fallback', ok: false, ms: 0, text: `The step-by-step writer stopped (${e.plain || 'it ran into a problem'}), so the standard writer finished the job.` }];
+    }
+  }
+  let problems = [];
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    const { data } = await completeJSON('post_generation', {
+      messages: [{ role: 'user', content: fallbackPrompt(problems) }],
+      response_format: { type: 'json_schema', json_schema: { name: 'caption_variants', schema: VARIANTS_SCHEMA } },
+    }, { validate: (d) => { if (!Array.isArray(d?.variants)) throw new Error('answer is missing variants'); } });
+    const good = [];
+    problems = [];
+    for (const v of data.variants.slice(0, max)) {
+      const own = checkOne(String(v.caption ?? '').trim(), v);
+      const withOthers = own.length ? [] : checkSet([...good, v]);
+      if (own.length || withOthers.length) problems.push(`The "${v.angle}" variant: ${[...own, ...withOthers].join('; ')}`);
+      else good.push(v);
+    }
+    if (good.length) return { variants: good, trace, mode: agent ? 'fallback' : 'single' };
+    console.error(`variants rejected (attempt ${attempt}/${MAX_ATTEMPTS}):`, problems.join(' | '));
+  }
+  throw fail(`Could not write captions that follow the rules after ${MAX_ATTEMPTS} tries. Please try again.`, 422);
+}
+
 // ---- generate for a NEW product (uploaded photos + the owner's details form) ---------------------------------
 const clean = (v, n) => clip(String(v ?? '').replace(/[\u0000-\u001f]/g, ' ').trim(), n);
 const splitList = (v) => clean(v, 120).split(/[,;\n]/).map((x) => x.trim()).filter(Boolean).slice(0, 12);
@@ -561,7 +737,7 @@ function newProductFacts(f, analysis, availability = null) {
   };
 }
 
-export async function generateNewProduct(pageId, { form, analysis, language, hint, priceOptional = false, availability = null }) {
+export async function generateNewProduct(pageId, { form, analysis, language, hint, priceOptional = false, availability = null, variants = true }) {
   if (!LANGUAGES.includes(language)) throw fail(`language must be one of ${LANGUAGES.join(', ')}`);
   const f = parseProductForm(form, { priceOptional });
   const { ctx, examples, names, pbData, priceRequired: priceAsked, ctxJson } = await loadContext(pageId);
@@ -578,6 +754,40 @@ export async function generateNewProduct(pageId, { form, analysis, language, hin
       'Do not claim availability (pre-order, limited stock, sold out, in stock) unless it is in the known facts.',
     ],
   };
+  // Urgency is real only when the stock count is known and low; the same number is then the only count the caption may state.
+  const stockLow = f.stock !== null && f.stock > 0 && f.stock <= await lowStockThreshold(pageId).catch(() => 3);
+  const rulesBase = { requiredPrice: f.price == null ? null : String(f.price), requiredPlaceholders: missing, noOffer: !f.offer, stockKnown: f.stock !== null, requiredNumbers: f.offer ? [...numbersIn(f.offer)] : [], stockLeft: stockLow ? f.stock : null };
+
+  const patterns = variants ? qualifiedPatterns(pbData, ctx) : [];
+  if (patterns.length) {
+    const angles = allowedAngles({ hasOffer: !!f.offer, stockLow });
+    const max = Math.min(MAX_VARIANTS, patterns.length, angles.length);
+    const languageRule = LANGUAGE_RULE[language];
+    const vInfo = { angles, max, patterns: patterns.map(({ id, pattern, value, posts }) => ({ id, pattern, value, posts })) };
+    const { variants: made, trace, mode } = await runVariants({
+      agent: makeAgent({ pageId, kind: 'new_product', facts, analysis, ctx, examples, pbData, language, priceRequired, extra, hint, variants: vInfo }),
+      fallbackPrompt: (problems) => `${variantsPrompt({ ctx, facts, languageRule, priceRequired, extra, hint, variants: vInfo }).split('HOW TO WORK')[0]}Return JSON: "variants", an array of up to ${max} items, each with "angle", "pattern", "reason" and "caption".\n${problems.length ? `\nYOUR PREVIOUS ANSWER WAS REJECTED. Fix these problems:\n- ${problems.join('\n- ')}\n` : ''}`,
+      language, allowedNumbers: numbersIn(factsJson), knownText: factsJson, priceRequired, ctxJson, forbiddenNames: names,
+      rules: rulesBase, ctx, angles, patterns, max,
+    });
+    const view = made.map((v, i) => {
+      const pattern = patterns.find((p) => p.id === v.pattern);
+      const caption = String(v.caption).trim();
+      return {
+        id: `v${i + 1}`, angle: v.angle, angle_label: ANGLES[v.angle].label, caption, reason: v.reason.trim(), pattern,
+        basis: `Based on what worked on your page (${pattern.posts} posts)`,
+        why: [{ ref: v.pattern, reason: v.reason.trim(), pattern, action: null }],
+        patterns_used: [pattern], placeholders: [...new Set([...caption.matchAll(/\[([^\]]+)\]/g)].map((m) => m[1]))],
+      };
+    });
+    const first = view[0];
+    return {
+      kind: 'generate', caption: first.caption, language, attempts: 1, trace, agent_mode: mode, product: { name: f.name, ...f },
+      why: first.why, patterns_used: first.patterns_used, placeholders: first.placeholders, angle: first.angle, pattern: first.pattern,
+      variants: view, best_time: bestPostingTime(pbData), photo_url: null, source_post_id: null,
+    };
+  }
+
   const { data, caption, attempts, trace, mode } = await runWithChecks({
     agent: makeAgent({ pageId, kind: 'new_product', facts, analysis, ctx, examples, pbData, language, priceRequired, extra, hint }),
     build: (problems) => generatePrompt({ ctx, examples, facts, language, priceRequired, hint, problems, extra }),
@@ -585,10 +795,10 @@ export async function generateNewProduct(pageId, { form, analysis, language, hin
     validateShape: (d) => { if (typeof d?.caption !== 'string' || !Array.isArray(d.why)) throw new Error('answer is missing caption or why'); },
     extraCheck: (d, json) => checkWhy(d, json, ctx),
     language, allowedNumbers: numbersIn(factsJson), knownText: factsJson, priceRequired, ctxJson, forbiddenNames: names,
-    rules: { requiredPrice: f.price == null ? null : String(f.price), requiredPlaceholders: missing, noOffer: !f.offer, stockKnown: f.stock !== null, requiredNumbers: f.offer ? [...numbersIn(f.offer)] : [] },
+    rules: rulesBase,
   });
   return {
-    kind: 'generate', caption, language, attempts, trace, agent_mode: mode, product: { name: f.name, ...f },
+    kind: 'generate', caption, language, attempts, trace, agent_mode: mode, product: { name: f.name, ...f }, variants: [], best_time: bestPostingTime(pbData),
     why: data.why.map((w) => ({ ref: w.ref, reason: w.reason, pattern: ctx.patterns.find((p) => p.id === w.ref) || null, action: ctx.actions.find((a) => a.id === w.ref)?.text || null })),
     patterns_used: usedPatterns(ctx, data.why.map((w) => w.ref)),
     placeholders: [...new Set([...caption.matchAll(/\[([^\]]+)\]/g)].map((m) => m[1]))],
@@ -671,8 +881,10 @@ export async function improvePost(pageId, { postId, caption, language }) {
 // post_drafts (migration 002) keeps the structured details in its `why` column.
 export async function saveDraft(pageId, result) {
   const { caption, language, photo_url, photo_store, source_post_id, ...details } = result;
+  const withAngle = details.angle && await hasColumns('post_drafts', ['angle', 'pattern']); // db/010_angles.sql
   const { data, error } = await db.from('post_drafts').insert({
     page_id: pageId, source_post_id, caption, language, photo_url: photo_store ?? photo_url, why: details,
+    ...(withAngle && { angle: details.angle, pattern: details.pattern ?? null }),
   }).select().single();
   if (error) throw error;
   return data;
@@ -685,10 +897,14 @@ export async function listDrafts(pageId) {
   return Promise.all(data.map(async (d) => ({ ...d, photo_url: await showableUrl(d.photo_url), branded_url: await signedUrl(d.branded_url) })));
 }
 
-export async function updateDraft(pageId, draftId, caption) {
+// `variant` ({ angle, pattern }) is set when the owner picks one of the caption variants; it is kept with the draft.
+export async function updateDraft(pageId, draftId, caption, variant = null) {
   const text = String(caption ?? '').trim();
   if (text.length < 1 || text.length > 3000) throw fail('The caption must be between 1 and 3000 characters.');
-  const { data, error } = await db.from('post_drafts').update({ caption: text, updated_at: new Date().toISOString() })
+  const angle = variant && Object.keys(ANGLES).includes(variant.angle) ? variant.angle : null;
+  const pattern = angle && variant.pattern ? { pattern: String(variant.pattern.pattern ?? '').slice(0, 80), value: String(variant.pattern.value ?? '').slice(0, 80), posts: Number(variant.pattern.posts) || 0 } : null;
+  const withAngle = angle && await hasColumns('post_drafts', ['angle', 'pattern']);
+  const { data, error } = await db.from('post_drafts').update({ caption: text, updated_at: new Date().toISOString(), ...(withAngle && { angle, pattern }) })
     .eq('id', draftId).eq('page_id', pageId).select().maybeSingle();
   if (error) throw error;
   if (!data) throw fail('Draft not found.', 404);

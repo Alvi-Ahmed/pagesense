@@ -121,6 +121,14 @@ export function Playbook() {
           <Bars groups={strongest.groups} average={data.basis.median_engagement} />
         </Card>
       )}
+      {playbook.angles && (
+        <Card title="Which angle works for you">
+          <p className="text-sm font-semibold">{playbook.angles.text}</p>
+          <ul className="flex flex-col gap-1 text-sm text-muted">
+            {playbook.angles.groups.map((g) => <li key={g.angle}><span className="capitalize">{g.label}</span>: {g.posts} posts, typical engagement {g.median_engagement}</li>)}
+          </ul>
+        </Card>
+      )}
       {!data.dimensions.length && (
         <EmptyState title="Not enough posts to compare yet">Patterns appear once there are at least 3 posts of each kind.</EmptyState>
       )}

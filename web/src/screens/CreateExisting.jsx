@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { get, patch, post } from '../api'
 import { applyLocal } from '../catalogLocal'
-import { fromDraft, loadDrafts, saveDemoDraft, updateDemoDraft } from '../drafts'
+import { chooseVariant, fromDraft, loadDrafts, saveDemoDraft, updateDemoDraft } from '../drafts'
 import { Card, LanguageToggle, PostEditor } from '../components/PostEditor'
 import { BrandedPhoto } from '../components/BrandedPhoto'
+import { VariantCards } from '../components/VariantCards'
 import { ErrorState, Skeleton } from '../components/ui'
 
 // "Post about a product I already sell": pick a product found in the page's photo tags (or describe one),
@@ -86,6 +87,19 @@ export function CreateExisting({ session, from, hint }) {
     else if (result && (productKey || (freeText && description.trim()))) generate(lang)
   }
 
+  // choosing a variant makes it the draft: its caption, angle and pattern are kept with the draft
+  const pickVariant = async (v) => {
+    const next = chooseVariant(result, v)
+    try {
+      if (result.draft_id) {
+        const variant = { angle: v.angle, pattern: v.pattern }
+        if (session.demo) updateDemoDraft(result.draft_id, v.caption, variant)
+        else await patch(`/pages/${pageId}/drafts/${result.draft_id}`, { caption: v.caption, variant, accessToken: session.token })
+      }
+      setResult(next); setResultKey((k) => k + 1)
+    } catch (e) { setError(e.message) }
+  }
+
   const saveEdit = async (caption) => {
     if (!result?.draft_id || caption === result.caption) return
     try {
@@ -154,6 +168,9 @@ export function CreateExisting({ session, from, hint }) {
       )}
       {error && <ErrorState message={error} onRetry={improving ? () => improve(language) : result || !needsInput ? () => generate() : undefined} />}
 
+      {result && !pending && result.variants?.length > 0 && (
+        <VariantCards variants={result.variants} selected={result.angle} onSelect={pickVariant} bestTime={result.best_time} />
+      )}
       {result && !pending && (
         <PostEditor key={resultKey} result={result} photo={photo} onSaveEdit={saveEdit}
           photoSlot={!session.demo && result.source_post_id && (

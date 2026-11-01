@@ -1,7 +1,7 @@
 import { answerText, chatWithTools, parseJSON } from './ai.js';
 
 export const MAX_TOOL_CALLS = Number(process.env.AGENT_MAX_TOOL_CALLS) || 8; // per run, including check_draft (the env var is for tests)
-const MAX_TURNS = 14; // model replies per run: tool turns plus the final answer and any correction rounds
+const EXTRA_TURNS = 6; // model replies beyond one per tool call: the final answer and any correction rounds
 const MAX_FINAL_REJECTIONS = 2;
 
 // ---- tools the model may call (all read-only) -------------------------------------------------
@@ -15,7 +15,7 @@ export const TOOLS = [
   { name: 'find_similar_products', description: "How this seller's earlier posts about similar products did: number of posts, typical engagement, share that showed a price, worn vs flat photos.", parameters: obj({ product_type: { type: 'string', description: 'for example "sneakers"; leave out to use the current product' } }) },
   { name: 'get_customer_questions', description: 'What customers ask in their comments, as counts and shares per kind of question (price, size, stock, delivery...). Totals only: no comment text and no names.', parameters: obj() },
   { name: 'get_best_captions', description: "The seller's best captions, to copy their tone, length, emoji and layout (not their facts).", parameters: obj() },
-  { name: 'check_draft', description: 'Check a draft against the grounding rules in code: numbers only from the known facts, placeholders for unknown facts, price shown when many customers ask it, no names, right language, valid reasons. Returns pass or fail with reasons. You must call this with your final caption and reasons, and fix and re-check until it passes.', parameters: obj({ caption: { type: 'string' }, why: WHY_ITEMS, changes: CHANGE_ITEMS }, ['caption']) },
+  { name: 'check_draft', description: 'Check a draft against the grounding rules in code: numbers only from the known facts, placeholders for unknown facts, price shown when many customers ask it, no names, right language, valid reasons. Returns pass or fail with reasons. You must call this with your final caption and reasons, and fix and re-check until it passes.', parameters: obj({ caption: { type: 'string' }, why: WHY_ITEMS, changes: CHANGE_ITEMS, angle: { type: 'string', description: 'variants only: the angle of this variant' }, pattern: { type: 'string', description: 'variants only: the pattern id (P1...) this variant is based on' }, reason: { type: 'string', description: 'variants only: one plain sentence on how the caption uses that pattern' } }, ['caption']) },
 ].map(({ name, description, parameters }) => ({ type: 'function', function: { name, description, parameters } }));
 
 // ---- the trace, in plain words -----------------------------------------------------------------
@@ -43,16 +43,21 @@ const stop = (message, trace, toolCalls, plain) => Object.assign(new Error(messa
 // prompt: the task and rules. impls: tool name -> async (args) => result. check(caption, data) -> problems[]
 // (the same checks that guard the single-call writer). finalSchemaHint is added to the closing instruction.
 // Resolves { data, caption, trace, toolCalls } or throws an error carrying the trace so far.
-export async function runAgent({ runId, pageId, prompt, impls, check, shape }) {
+// multi: { max, maxCalls, checkSet(items) -> problems[] } makes the final answer { variants: [...] }: every variant must
+// have passed check_draft on its own, and the set is checked as a whole (distinct angles and patterns).
+export async function runAgent({ runId, pageId, prompt, impls, check, shape, multi = null }) {
+  const maxCalls = multi?.maxCalls ?? MAX_TOOL_CALLS;
+  const maxTurns = maxCalls + EXTRA_TURNS;
   const messages = [{ role: 'user', content: prompt }];
   const trace = [];
   let calls = 0;
   let rejections = 0;
   let passed = null; // the last draft that check_draft passed
+  const passedAll = new Map(); // multi: normalised caption -> what check_draft passed
   let lastCheckFailed = false;
   const norm = (t) => String(t ?? '').replace(/\s+/g, ' ').trim();
 
-  for (let turn = 1; turn <= MAX_TURNS; turn++) {
+  for (let turn = 1; turn <= maxTurns; turn++) {
     const started = Date.now();
     const res = await chatWithTools({ messages, tools: TOOLS });
     const msg = res.choices[0].message;
@@ -65,7 +70,7 @@ export async function runAgent({ runId, pageId, prompt, impls, check, shape }) {
         tool_calls: msg.tool_calls.map((tc) => ({ id: tc.id, type: 'function', function: { name: tc.function.name, arguments: tc.function.arguments } })),
       });
       for (const tc of msg.tool_calls) {
-        if (calls >= MAX_TOOL_CALLS) throw stop(`reached the limit of ${MAX_TOOL_CALLS} tool calls`, trace, calls, 'it needed more steps than allowed');
+        if (calls >= maxCalls) throw stop(`reached the limit of ${maxCalls} tool calls`, trace, calls, 'it needed more steps than allowed');
         calls++;
         const name = tc.function.name;
         const t0 = Date.now();
@@ -79,6 +84,7 @@ export async function runAgent({ runId, pageId, prompt, impls, check, shape }) {
           if (name === 'check_draft') {
             const caption = String(args.caption ?? '');
             passed = result.pass ? { caption: norm(caption), data: { caption, why: args.why, changes: args.changes } } : null;
+            if (multi && result.pass) passedAll.set(norm(caption), { angle: args.angle, pattern: args.pattern, reason: args.reason });
             if (!result.pass) lastCheckFailed = true;
           }
         } catch (e) {
@@ -99,8 +105,34 @@ export async function runAgent({ runId, pageId, prompt, impls, check, shape }) {
     // no tool calls: this is the final answer
     let data;
     try { data = parseJSON(answerText(msg)); } catch (e) { data = null; log('final_unreadable', { runId, error: e.message }); }
-    const caption = data && shape(data) ? String(data.caption).trim() : null;
     let why;
+    if (multi) {
+      const items = Array.isArray(data?.variants) ? data.variants.filter((v) => shape(v)) : [];
+      const good = [];
+      const problems = [];
+      if (!items.length) problems.push('Your answer was not the JSON object asked for. Reply with ONLY that JSON.');
+      for (const v of items) {
+        const key = norm(v.caption);
+        const seen = passedAll.get(key);
+        if (!seen || seen.angle !== v.angle || seen.pattern !== v.pattern) { problems.push(`The "${v.angle}" variant has not been checked exactly as written: call check_draft with that caption, angle, pattern and reason first.`); continue; }
+        const own = check(String(v.caption).trim(), v);
+        if (own.length) { problems.push(`The "${v.angle}" variant does not pass: ${own.join('; ')}.`); continue; }
+        good.push(v);
+      }
+      const setProblems = good.length ? multi.checkSet(good) : [];
+      if (good.length && !problems.length && !setProblems.length) {
+        trace.push({ n: calls + 1, tool: 'finish', ok: true, text: `Wrote ${good.length} caption ${good.length === 1 ? 'variant' : 'variants'}, each checked against the rules.`, ms: 0 });
+        log('done', { runId, pageId, tool_calls: calls, turns: turn, variants: good.length });
+        return { data: { variants: good }, variants: good, trace, toolCalls: calls };
+      }
+      why = [...problems, ...setProblems].join(' ');
+      // out of correction rounds: keep the variants that did pass rather than lose them all
+      if (good.length && rejections >= MAX_FINAL_REJECTIONS && !setProblems.length) {
+        trace.push({ n: calls + 1, tool: 'finish', ok: true, text: `Kept the ${good.length} ${good.length === 1 ? 'variant' : 'variants'} that passed every check.`, ms: 0 });
+        return { data: { variants: good }, variants: good, trace, toolCalls: calls };
+      }
+    } else {
+    const caption = data && shape(data) ? String(data.caption).trim() : null;
     if (!caption) why = 'Your answer was not the JSON object asked for. Reply with ONLY that JSON.';
     else if (!passed || passed.caption !== norm(caption)) why = 'You have not checked this exact caption. Call check_draft with it and your reasons first, then answer.';
     else {
@@ -112,9 +144,10 @@ export async function runAgent({ runId, pageId, prompt, impls, check, shape }) {
       }
       why = `That final answer does not pass: ${problems.join('; ')}. Fix it, call check_draft, then answer.`;
     }
+    }
     if (++rejections > MAX_FINAL_REJECTIONS) throw stop('the final answer kept failing the checks', trace, calls, 'its draft kept breaking the rules');
     log('final_rejected', { runId, reason: why });
     messages.push({ role: 'assistant', content: msg.content ?? '' }, { role: 'user', content: why });
   }
-  throw stop(`no final answer after ${MAX_TURNS} turns`, trace, calls, 'it took too many turns');
+  throw stop(`no final answer after ${maxTurns} turns`, trace, calls, 'it took too many turns');
 }

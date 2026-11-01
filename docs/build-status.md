@@ -118,6 +118,25 @@ Status: DONE / PARTIAL / MISSING. Update this file after each item.
    Demo: photos go to the server only as base64 to be analysed, are never stored, drafts stay in the tab.
    db/005_new_products.sql adds stock, offer, photo_paths, analysis to products and product_id to post_drafts;
    until it is run, those details are kept in the draft's `why` json.
+9b. DONE: Caption variants (extends 9 + 16; new product and catalog product, via POST /posts/generate, one generation).
+    The same agent run writes up to 3 variants, each with an ANGLE (answer_first, showcase, offer, urgency) and a
+    different playbook pattern. Angles come from the facts: offer only with a real offer, urgency only when the stock
+    count is known and at or under the page's low-stock level (the stock number is then the only count the caption
+    may state). Patterns: the playbook's top 5 with 10+ posts and a lift above 1, leaving out weekday and time of day
+    (those become "Best time to post"); fewer than 3 qualifying patterns or angles gives fewer variants, none gives
+    the usual single caption. Every variant passes check_draft on its own (caption, angle, pattern, reason), then
+    the set is checked (distinct angles and patterns, not near-copies). Fallback: the standard writer asked for the
+    same set. New checkCaption rules for ALL captions: no engagement bait (asking to comment, like, share or tag to
+    get a reply, the price or a reward; English, Banglish and Bangla patterns) and no urgency or deadline claims
+    unless stock is really low. Reasons may not promise results or quote percentages. Wording: "Based on what worked
+    on your page (N posts)". Create screen: swipeable cards (angle, pattern, reason, caption), "Use this one" makes
+    it the draft; best posting time shown when the playbook has one. The chosen variant's angle and pattern are
+    stored on the draft (db/010_angles.sql: post_drafts and posts get angle + pattern; before it is run they stay in
+    the draft's details). Choosing another variant PATCHes the draft (demo: the tab's draft). Publishing is item 11,
+    which must copy angle + pattern from the draft to the post. Playbook screen: once 3+ organic posts carry an
+    angle, "Your X posts outperform your Y posts, based on N posts" (median engagement). Existing posts have no
+    angle, so this card appears only after posts are published through PageSense.
+    Also fixed: saving a new product wrote products.source 'upload' but 006 allows 'uploaded'.
 10. DONE: Photo branding. Brand settings (header menu): shop name, brand color, logo upload (PNG, or SVG which is
     checked then rasterised; a logo on a white box gets the white keyed out) or "Generate a logo" (muse-image-1.0,
     wordmark or icon + name, 3 options, each read back by Muse Spark to confirm the spelling). Stored in the

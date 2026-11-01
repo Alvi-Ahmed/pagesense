@@ -1,9 +1,10 @@
 import { useRef, useState } from 'react'
 import { API_URL, post } from '../api'
-import { saveDemoDraft } from '../drafts'
+import { chooseVariant, saveDemoDraft } from '../drafts'
 import { MAX_PHOTO_MB, MAX_PHOTOS, blobToDataUrl, shrink } from '../photoTools'
 import { Card, LanguageToggle, PostEditor } from '../components/PostEditor'
 import { BrandedPhoto } from '../components/BrandedPhoto'
+import { VariantCards } from '../components/VariantCards'
 import { ErrorState, Skeleton } from '../components/ui'
 
 const ISSUE = {
@@ -120,7 +121,7 @@ export function CreateNew({ session }) {
       } else {
         const r = await post(`/pages/${pageId}/products`, {
           accessToken: session.token, form, analysis, upload_ids: ready.map((p) => p.uploadId),
-          draft: { caption, language: result.language, why: result.why, patterns_used: result.patterns_used, placeholders: result.placeholders },
+          draft: { caption, language: result.language, why: result.why, patterns_used: result.patterns_used, placeholders: result.placeholders, angle: result.angle, pattern: result.pattern, variants: result.variants },
         })
         setSaved({ product: r.product, draftId: r.draft?.id })
       }
@@ -241,6 +242,10 @@ export function CreateNew({ session }) {
       )}
       {error && <ErrorState message={error} onRetry={analysis ? undefined : ready.length ? analyse : undefined} />}
 
+      {result && busy !== 'generating' && result.variants?.length > 0 && (
+        <VariantCards variants={result.variants} selected={result.angle} disabled={!!saved}
+          onSelect={(v) => { const next = chooseVariant(result, v); setResult(next); setCaption(v.caption); setResultKey((k) => k + 1) }} bestTime={result.best_time} />
+      )}
       {result && busy !== 'generating' && (
         <PostEditor key={resultKey} result={result} photo={photos[0]?.previewUrl}
           photoSlot={ready[0] && (
