@@ -7,6 +7,7 @@ const snap = JSON.parse(fs.readFileSync(new URL('../demo/snapshot.json', import.
 const texts = [
   ...snap.posts.map((p) => ({ id: p.id, text: p.message })),
   ...snap.comments.map((c) => ({ id: c.id, text: c.message })),
+  ...(snap.products ?? []).map((p) => ({ id: p.id, text: `${p.name} ${p.product_phrase ?? ''}` })),
 ].filter((t) => t.text);
 
 const checks = {

@@ -1,8 +1,10 @@
 import { db } from './db.js';
 import { clip, completeJSON } from './ai.js';
 import { INTENT_LABELS, latestPlaybook } from './playbook.js';
+import { getProduct as getCatalogProduct } from './catalog.js';
 import { MAX_TOOL_CALLS, runAgent } from './agent.js';
 import { randomUUID } from 'node:crypto';
+import { numbersIn, toAscii } from './textutil.js';
 import { findPersonalNames } from './names.js';
 import { showableUrl } from './photos.js';
 
@@ -27,8 +29,6 @@ async function fetchAll(query) {
 }
 
 // ---- text helpers ------------------------------------------------------------------------
-const toAscii = (t) => String(t ?? '').replace(/[০-৯]/g, (d) => '০১২৩৪৫৬৭৮৯'.indexOf(d));
-const numbersIn = (text) => new Set((toAscii(text).replace(/(\d),(?=\d{3})/g, '$1').match(/\d+(?:\.\d+)?/g) || []));
 // Bangla script, Banglish (Bangla words in Latin letters, recognised by common words) or English.
 const BANGLISH_WORDS = /\b(?:ache|achhe|nei|korun|korte|korbo|koro|dam|dami|jonno|jante|janaben|pabo|paben|pawa|ekhon|ekhoni|kinbo|dibo|apni|apnar|apnara|amader|amar|inbox|niye|ashlam|esheche|hobe|hoy|ta|ki|na)\b/gi;
 export const detectLanguage = (t) => (bengaliShare(t) > 0.4 ? 'bangla' : (t.match(BANGLISH_WORDS) || []).length >= 3 ? 'banglish' : 'english');
@@ -38,13 +38,13 @@ const bengaliShare = (t) => {
   return letters ? (t.match(/[ঀ-৿]/g) || []).length / letters : 0;
 };
 // Page-written captions can carry phone numbers, links and tags of customers: none of that goes to the model.
-const scrub = (t) => String(t ?? '').replace(/https?:\/\/\S+|\bwww\.\S+/gi, '').replace(/[\w.+-]+@[\w-]+\.[\w.]+/g, '')
+export const scrub = (t) => String(t ?? '').replace(/https?:\/\/\S+|\bwww\.\S+/gi, '').replace(/[\w.+-]+@[\w-]+\.[\w.]+/g, '')
   .replace(/@\S+/g, '').replace(/\+?[\d০-৯][\d০-৯ \t\-().]{6,}[\d০-৯]/g, (m) => (m.replace(/[^\d০-৯]/g, '').length >= 9 ? '' : m)).trim();
 
-const stripAliases = (t) => t.replace(/\bCustomer\s*\d+\b/g, '').replace(/[ \t]{2,}/g, ' ').trim();
+export const stripAliases = (t) => t.replace(/\bCustomer\s*\d+\b/g, '').replace(/[ \t]{2,}/g, ' ').trim();
 const escapeRe = (n) => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 // Person names found in `texts` by Muse Spark, then removed from them. Captions often end with tagged customers.
-async function removeNames(texts) {
+export async function removeNames(texts) {
   const found = await findPersonalNames(texts.map((text, i) => ({ id: String(i), text })), { quiet: true });
   const names = [...new Set([...found.values()].flat())].sort((a, b) => b.length - a.length);
   const re = names.length ? new RegExp(`(?<![\\p{L}\\p{N}])(?:${names.map(escapeRe).join('|')})(?![\\p{L}\\p{N}])`, 'giu') : null;
@@ -526,10 +526,10 @@ const clean = (v, n) => clip(String(v ?? '').replace(/[\u0000-\u001f]/g, ' ').tr
 const splitList = (v) => clean(v, 120).split(/[,;\n]/).map((x) => x.trim()).filter(Boolean).slice(0, 12);
 
 // The owner's form, checked and tidied. Only the price is required.
-export function parseProductForm(form = {}) {
+export function parseProductForm(form = {}, { priceOptional = false } = {}) {
   const priceText = toAscii(form.price).replace(/[,\s৳]|tk\.?|taka|bdt/gi, '');
-  const price = Number(priceText);
-  if (!priceText || !Number.isFinite(price) || price <= 0) throw fail('Enter the price, for example 950.');
+  const price = priceText === '' && priceOptional ? null : Number(priceText);
+  if (price !== null && (!priceText || !Number.isFinite(price) || price <= 0)) throw fail('Enter the price, for example 950.');
   const stockText = toAscii(form.stock).replace(/[,\s]/g, '');
   const stock = stockText === '' ? null : Math.floor(Number(stockText));
   if (stock !== null && (!Number.isFinite(stock) || stock < 0)) throw fail('Stock must be a number, or leave it empty.');
@@ -539,23 +539,24 @@ export function parseProductForm(form = {}) {
   };
 }
 
-function newProductFacts(f, analysis) {
+function newProductFacts(f, analysis, availability = null) {
   return {
     product_name: f.name, product_type: analysis?.product_type || null, looks_like: analysis?.product_phrase || null,
-    price: { amount: f.price, currency: 'Bangladeshi taka (Tk or ৳)' },
+    price: f.price == null ? null : { amount: f.price, currency: 'Bangladeshi taka (Tk or ৳)' }, availability,
     sizes: f.sizes.length ? f.sizes : null, colors: f.colors.length ? f.colors : null, stock: f.stock, offer: f.offer,
   };
 }
 
-export async function generateNewProduct(pageId, { form, analysis, language }) {
+export async function generateNewProduct(pageId, { form, analysis, language, hint, priceOptional = false, availability = null }) {
   if (!LANGUAGES.includes(language)) throw fail(`language must be one of ${LANGUAGES.join(', ')}`);
-  const f = parseProductForm(form);
-  const { ctx, examples, names, pbData, ctxJson } = await loadContext(pageId);
-  const facts = newProductFacts(f, analysis);
+  const f = parseProductForm(form, { priceOptional });
+  const { ctx, examples, names, pbData, priceRequired: priceAsked, ctxJson } = await loadContext(pageId);
+  const facts = newProductFacts(f, analysis, availability);
   const factsJson = JSON.stringify(facts);
   const missing = [!f.sizes.length && 'SIZES', !f.colors.length && 'COLORS', f.stock === null && 'STOCK'].filter(Boolean);
+  const priceRequired = f.price == null ? priceAsked : false; // no stated price: the 20% rule applies, as for any post
   const extra = {
-    priceRule: `The price is KNOWN and must appear in the caption: ${f.price} taka. Write the number exactly (for example "Tk ${f.price}" or "${f.price} taka"). Do not write [PRICE].`,
+    ...(f.price != null && { priceRule: `The price is KNOWN and must appear in the caption: ${f.price} taka. Write the number exactly (for example "Tk ${f.price}" or "${f.price} taka"). Do not write [PRICE].` }),
     lines: [
       'Facts marked null are unknown. Never guess them.',
       ...(missing.length ? [`These were left empty by the owner, so the caption must contain these exact placeholders: ${missing.map((m) => `[${m}]`).join(', ')}.`] : []),
@@ -564,13 +565,13 @@ export async function generateNewProduct(pageId, { form, analysis, language }) {
     ],
   };
   const { data, caption, attempts, trace, mode } = await runWithChecks({
-    agent: makeAgent({ pageId, kind: 'new_product', facts, analysis, ctx, examples, pbData, language, priceRequired: false, extra }),
-    build: (problems) => generatePrompt({ ctx, examples, facts, language, priceRequired: false, problems, extra }),
+    agent: makeAgent({ pageId, kind: 'new_product', facts, analysis, ctx, examples, pbData, language, priceRequired, extra, hint }),
+    build: (problems) => generatePrompt({ ctx, examples, facts, language, priceRequired, hint, problems, extra }),
     schema: GENERATE_SCHEMA, schemaName: 'post_caption',
     validateShape: (d) => { if (typeof d?.caption !== 'string' || !Array.isArray(d.why)) throw new Error('answer is missing caption or why'); },
     extraCheck: (d, json) => checkWhy(d, json, ctx),
-    language, allowedNumbers: numbersIn(factsJson), knownText: factsJson, priceRequired: false, ctxJson, forbiddenNames: names,
-    rules: { requiredPrice: String(f.price), requiredPlaceholders: missing, noOffer: !f.offer, stockKnown: f.stock !== null, requiredNumbers: f.offer ? [...numbersIn(f.offer)] : [] },
+    language, allowedNumbers: numbersIn(factsJson), knownText: factsJson, priceRequired, ctxJson, forbiddenNames: names,
+    rules: { requiredPrice: f.price == null ? null : String(f.price), requiredPlaceholders: missing, noOffer: !f.offer, stockKnown: f.stock !== null, requiredNumbers: f.offer ? [...numbersIn(f.offer)] : [] },
   });
   return {
     kind: 'generate', caption, language, attempts, trace, agent_mode: mode, product: { name: f.name, ...f },
@@ -579,6 +580,21 @@ export async function generateNewProduct(pageId, { form, analysis, language }) {
     placeholders: [...new Set([...caption.matchAll(/\[([^\]]+)\]/g)].map((m) => m[1]))],
     photo_url: null, source_post_id: null,
   };
+}
+
+// ---- generate from a product in the catalog (the "existing product" option) -------------------------------------
+// The catalog holds what the owner has confirmed, so a known price must be written and unknown facts become
+// placeholders, exactly as for a new product.
+export async function generateFromCatalog(pageId, { productId, language, hint }) {
+  const product = await getCatalogProduct(pageId, productId);
+  if (product.status === 'sold_out') throw fail('This product is marked sold out. Restock it before writing a post about it.', 409);
+  const result = await generateNewProduct(pageId, {
+    form: { name: product.name, price: product.price ?? '', sizes: product.sizes.join(', '), colors: product.colors.join(', '), stock: product.stock ?? '', offer: product.offer ?? '' },
+    analysis: { product_type: product.type, product_phrase: product.phrase || product.name },
+    language, hint, priceOptional: true, availability: product.status === 'pre_order' ? 'pre-order (the caption may say so)' : null,
+  });
+  const stored = product.photo_ref ?? null;
+  return { ...result, product: { id: product.id, name: product.name, price: product.price, status: product.status }, photo_url: product.thumbnail_url, photo_store: stored, source_post_id: product.source_post_id ?? null };
 }
 
 // ---- improve -------------------------------------------------------------------------------
@@ -637,9 +653,9 @@ export async function improvePost(pageId, { postId, caption, language }) {
 // ---- drafts ----------------------------------------------------------------------------------
 // post_drafts (migration 002) keeps the structured details in its `why` column.
 export async function saveDraft(pageId, result) {
-  const { caption, language, photo_url, source_post_id, ...details } = result;
+  const { caption, language, photo_url, photo_store, source_post_id, ...details } = result;
   const { data, error } = await db.from('post_drafts').insert({
-    page_id: pageId, source_post_id, caption, language, photo_url, why: details,
+    page_id: pageId, source_post_id, caption, language, photo_url: photo_store ?? photo_url, why: details,
   }).select().single();
   if (error) throw error;
   return data;

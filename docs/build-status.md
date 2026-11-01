@@ -42,8 +42,23 @@ Status: DONE / PARTIAL / MISSING. Update this file after each item.
    Sanity guard: a pattern needs 10+ posts and at most 10x the typical post to be the headline; anything
    stronger or thinner is listed as "unusual, worth checking". Lifts are written in plain words
    ("about twice the engagement of your typical post"), never as raw percentages or "105.8 times".
-6. MISSING: Catalog: products from posts (name, sizes, colors, price if mentioned, linked posts),
-   editable, status in stock / pre-order / sold out.
+6. DONE: Catalog. Stage `catalog` of the analysis pipeline (after the playbook; waits for db/006_catalog.sql) reads
+   the newest 800 tagged posts (CATALOG_POST_LIMIT) that no product covers yet, asks muse-spark-open (Baseten,
+   falls back to muse-spark-1.3) for name, price, sizes, colors and pre-order, and verifies every answer against
+   the caption in code: a price, size or color that is not literally written there is dropped, a delivery charge or
+   a discount is never a price, pre-order only if the caption says it. Posts showing the same product merge
+   (same type, same photo phrase INCLUDING colors with 2+ distinctive words, or a near-copy caption plus a matching
+   phrase; differing stated prices keep them apart; boilerplate captions alone merge nothing); a group joins an
+   existing product instead of duplicating it, and extraction never overwrites an edit. products + product_posts;
+   GET /pages/:id/catalog (list, ?q, ?status), GET/PATCH /catalog/:productId, POST /catalog/:productId/status,
+   POST /catalog/merge. 006 adds product_phrase, offer, stock, source (uploaded | extracted), photo_paths, analysis,
+   caption_updates and the catalog stage record; until it is run everything still works on the original columns.
+8. DONE: Sold-out updates (src/catalogUpdates.js). Marking a product sold out writes, for its newest linked posts
+   (5 at a time, "write more" for the rest), a caption update with muse-spark-1.3: the original unchanged plus a
+   SOLD OUT line and a pointer to a similar in-stock product from the catalog. Same grounding as generation:
+   numbers only from the original or the similar product, no invented prices, no names, original text kept
+   (50%+ of its words), a clear sold-out line required. Restock offers "back in stock" versions. The owner copies
+   each one; "Update on Facebook" is disabled until item 11. POST/GET /pages/:id/catalog/:productId/updates.
 7. MISSING: Orders: orders and leads from comments, missing details flagged, owner confirmation.
 8. MISSING: Sold-out updates: suggested caption updates for posts featuring a sold-out product.
 9. DONE: Post generation. POST /pages/:id/posts/generate (product from post_tags or free text; bangla |
@@ -102,7 +117,13 @@ Status: DONE / PARTIAL / MISSING. Update this file after each item.
     Playbook's weakest recent posts; collapsible "How this post was made" shows the agent's steps; Home's "Create this post" prefills the playbook suggestion; drafts on Home.
     Built from the written spec: docs/design/create.png is not in the repo. Branded photo comes with item 10.
 17. MISSING: Orders screen.
-18. MISSING: Catalog screen.
+18. DONE: Catalog screen: search, status filters (All / In stock / Pre-order / Sold out / No price), rows with the
+    linked post's photo, status chip and post count, the missing-price warning ("X products have no price. Add a
+    price once and every new post uses it."), a product panel to edit details, mark sold out / restock, switch
+    pre-order, merge a duplicate and review caption updates. Create's "existing product" picker now uses the catalog
+    (a known price must be written, empty facts become placeholders). Built from the written spec: docs/design/
+    catalog.png is not in the repo. Demo: the catalog is read-only on the server; a visitor's edits, status changes,
+    merges and suggestions stay in the tab (sessionStorage); suggestions are still written by the model, rate limited.
 19. DONE: Demo mode (anonymized snapshot, same endpoints as real mode, read-only). Snapshot: newest 150
     posts, names replaced by "Customer N" (npm run demo:scan checks for leftovers), author/parent fields so
     answered comments are left out of "Needs your reply". Refresh: demo:export, demo:seed -- --reset,
@@ -112,5 +133,6 @@ Status: DONE / PARTIAL / MISSING. Update this file after each item.
 ## Build order for what's left
 4 → 5 + 15 → 14 → 9 + 16 → 6 + 18 → 8 → 7 + 17 → 10 → 11 → 20
 
-Known: demo post photos are Facebook image links and some show the real shop's name, phone number and website
+Known: Baseten chat calls returned 403 ("please check the api-key") on 2 Nov 2026, so bulk tasks ran on the Meta
+fallback; check the Baseten key or set BULK_PROVIDER=meta. Demo post photos are Facebook image links and some show the real shop's name, phone number and website
 printed in the image itself. demo:scan checks text only.

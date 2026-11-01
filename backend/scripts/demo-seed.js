@@ -8,7 +8,7 @@ import { db } from '../src/db.js';
 const snap = JSON.parse(fs.readFileSync(new URL('../demo/snapshot.json', import.meta.url), 'utf8'));
 
 if (process.argv.includes('--reset')) {
-  for (const [table, column] of [['playbooks', 'page_id'], ['analysis_jobs', 'page_id'], ['posts', 'page_id']]) {
+  for (const [table, column] of [['playbooks', 'page_id'], ['analysis_jobs', 'page_id'], ['products', 'page_id'], ['posts', 'page_id']]) {
     const { error } = await db.from(table).delete().eq(column, 'demo'); // never anything but the demo page
     if (error) throw new Error(`reset ${table}: ${error.message}`);
   }
@@ -28,6 +28,10 @@ await upsert('pages', [{ ...snap.page, access_token: null }]);
 await upsert('posts', snap.posts.map((p) => ({ ...p, page_id: 'demo' })));
 await upsert('comments', snap.comments);
 await upsert('post_tags', snap.post_tags);
+if (snap.products?.length) {
+  await upsert('products', snap.products.map((p) => ({ ...p, page_id: 'demo' })));
+  await upsert('product_posts', snap.product_posts);
+}
 
 // Demo visitors cannot rerun analysis (the demo is read-only), so restore its result from the snapshot.
 if (snap.playbook) {

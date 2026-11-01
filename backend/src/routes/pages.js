@@ -7,8 +7,10 @@ import { db } from '../db.js';
 import { startAnalysis, latestAnalysis } from '../analysis.js';
 import { latestPlaybook, previewPlaybook, setBoosted } from '../playbook.js';
 import { needsReply } from '../replies.js';
-import { generateNewProduct, generatePost, improvePost, listDrafts, listProducts, saveDraft, updateDraft } from '../generate.js';
+import { generateFromCatalog, generateNewProduct, generatePost, improvePost, listDrafts, listProducts, saveDraft, updateDraft } from '../generate.js';
 import { analyzePhotos, saveNewProduct } from '../newProduct.js';
+import { getProduct, listCatalog, mergeProducts, setStatus, updateProduct } from '../catalog.js';
+import { savedUpdates, suggestUpdates } from '../catalogUpdates.js';
 import { cleanPhoto, refFor, showableUrl, storePhoto, MAX_BYTES } from '../photos.js';
 import { rateLimit } from '../rateLimit.js';
 
@@ -133,6 +135,7 @@ router.get('/:id/posts/products', async (req, res) => {
 
 router.post('/:id/posts/generate', requireManager, generationLimit, async (req, res) => {
   // A new product is only saved (product and draft together) when the owner presses Save, so nothing is stored here.
+  if (req.body.productId) return respondWithDraft(req, res, () => generateFromCatalog(req.params.id, req.body));
   if (!req.body.newProduct) return respondWithDraft(req, res, () => generatePost(req.params.id, req.body));
   try {
     res.json(await generateNewProduct(req.params.id, { ...req.body.newProduct, language: req.body.language }));
@@ -198,6 +201,29 @@ router.patch('/:id/drafts/:draftId', rejectDemoWrites, requireManager, async (re
     res.status(err.status || 500).json({ error: err.message });
   }
 });
+
+// ---- catalog (items 6, 8, 18) ----------------------------------------------------------------------
+// The demo catalog is read-only: edits, status changes and merges happen in the visitor's browser (never here).
+const reply = (fn) => async (req, res) => {
+  try {
+    res.json(await fn(req));
+  } catch (err) {
+    console.error(err.message);
+    res.status(err.status || 500).json({ error: err.message });
+  }
+};
+
+router.get('/:id/catalog', reply((req) => listCatalog(req.params.id, { q: req.query.q, status: req.query.status })));
+router.get('/:id/catalog/:productId', reply((req) => getProduct(req.params.id, req.params.productId)));
+router.patch('/:id/catalog/:productId', rejectDemoWrites, requireManager, reply((req) => updateProduct(req.params.id, req.params.productId, req.body)));
+router.post('/:id/catalog/:productId/status', rejectDemoWrites, requireManager, reply((req) => setStatus(req.params.id, req.params.productId, req.body.status)));
+router.post('/:id/catalog/merge', rejectDemoWrites, requireManager, reply((req) => mergeProducts(req.params.id, req.body.keepId, req.body.mergeId)));
+
+// Suggested caption updates for a sold-out product's posts (or "back in stock" after a restock). They spend model
+// credits, so they share the generation limit. Real pages save them; the demo only returns them.
+router.post('/:id/catalog/:productId/updates', requireManager, generationLimit, reply((req) =>
+  suggestUpdates(req.params.id, req.params.productId, { ...req.body, save: req.params.id !== DEMO_PAGE_ID, trustKind: req.params.id === DEMO_PAGE_ID })));
+router.get('/:id/catalog/:productId/updates', reply((req) => savedUpdates(req.params.id, req.params.productId, req.query.kind === 'restock' ? 'restock' : 'sold_out')));
 
 // Comments that need an answer, for Home.
 router.get('/:id/replies', async (req, res) => {

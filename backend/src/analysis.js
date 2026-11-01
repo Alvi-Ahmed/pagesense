@@ -3,6 +3,7 @@ import { hasUntaggedSince, tagPage } from './tag.js';
 import { classifyPage, hasUnclassifiedSince } from './classify.js';
 import { buildPlaybook, latestPlaybook } from './playbook.js';
 import { hasStageTable } from './schema.js';
+import { catalogReady, extractCatalog, hasUncataloguedPosts } from './catalog.js';
 import { DEMO_PAGE_ID } from './demo.js';
 
 // Pipeline stages, in order. `version` goes up when a stage's logic changes enough that old results should be
@@ -25,6 +26,14 @@ export const STAGES = [
     run: (pageId, p) => buildPlaybook(pageId, p),
     // the playbook is rebuilt whenever an earlier stage did work (see plan()); on its own it only needs to exist
     hasNewWork: async (pageId) => (await latestPlaybook(pageId)).status === 'none',
+  },
+  {
+    // after the playbook so catalog changes never trigger a playbook rebuild; waits for migration 006 (it also lets
+    // analysis_stages record this stage)
+    name: 'catalog', version: 1,
+    requires: catalogReady,
+    run: (pageId, p) => extractCatalog(pageId, p),
+    hasNewWork: (pageId) => hasUncataloguedPosts(pageId),
   },
 ];
 
@@ -66,6 +75,7 @@ export async function plan(pageId, { force = false } = {}) {
   const records = await stageRecords(pageId);
   const planned = [];
   for (const stage of STAGES) {
+    if (stage.requires && !(await stage.requires())) continue; // its migration has not been run yet
     // without the table there is no history: treat every stage as current and look for missing items only
     const rec = records ? records.get(stage.name) : { version: stage.version, completed_at: null };
     let reason = null;

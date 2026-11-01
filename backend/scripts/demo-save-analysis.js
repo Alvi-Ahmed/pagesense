@@ -1,5 +1,5 @@
 // Rebuild the demo playbook, then copy the AI results for the demo page (post tags, comment intents/size/color
-// and the playbook) from the database into demo/snapshot.json, so a fresh `npm run demo:seed` has them all.
+// the playbook and the catalog) from the database into demo/snapshot.json, so a fresh `npm run demo:seed` has them all.
 // This is a maintainer script: the demo page itself is read-only for visitors.
 // Run: npm run demo:save-analysis
 import fs from 'node:fs';
@@ -32,9 +32,17 @@ for (const c of snap.comments) {
 snap.post_tags = (await fetchAll(() => db.from('post_tags').select('*').like('post_id', 'demo_p%').order('post_id')))
   .map(({ created_at, ...tag }) => tag); // eslint-disable-line no-unused-vars
 
+// the catalog: products found in the demo posts and the posts each one covers
+snap.products = await fetchAll(() => db.from('products').select('*').eq('page_id', 'demo').order('id'));
+const ids = snap.products.map((p) => p.id);
+snap.product_posts = [];
+for (let i = 0; i < ids.length; i += 150) {
+  snap.product_posts.push(...await fetchAll(() => db.from('product_posts').select('product_id, post_id').in('product_id', ids.slice(i, i + 150)).order('post_id')));
+}
+
 await buildPlaybook('demo');
 const { data, summary } = await latestPlaybook('demo');
 snap.playbook = { data, summary };
 
 fs.writeFileSync(file, JSON.stringify(snap, null, 1));
-console.log(`snapshot: ${classified}/${snap.comments.length} comments with intent, ${snap.post_tags.length} post tags, playbook saved`);
+console.log(`snapshot: ${classified}/${snap.comments.length} comments with intent, ${snap.post_tags.length} post tags, ${snap.products.length} products (${snap.product_posts.length} post links), playbook saved`);

@@ -9,6 +9,7 @@ export const TASKS = {
   post_tagging: { provider: process.env.PROVIDER_POST_TAGGING || BULK, lowEffort: true },
   playbook: { provider: process.env.PROVIDER_PLAYBOOK || BULK, lowEffort: true },
   photo_analysis: { provider: process.env.PROVIDER_PHOTO_ANALYSIS || BULK, lowEffort: true },
+  catalog_extraction: { provider: process.env.PROVIDER_CATALOG_EXTRACTION || BULK, lowEffort: true },
   name_scan: { provider: process.env.PROVIDER_NAME_SCAN || BULK, lowEffort: true },
   post_generation: { provider: process.env.PROVIDER_POST_GENERATION || 'meta', lowEffort: false },
 };

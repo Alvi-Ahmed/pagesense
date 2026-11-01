@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { get, patch, post } from '../api'
+import { applyLocal } from '../catalogLocal'
 import { fromDraft, loadDrafts, saveDemoDraft, updateDemoDraft } from '../drafts'
 import { Card, LanguageToggle, PostEditor } from '../components/PostEditor'
 import { ErrorState, Skeleton } from '../components/ui'
@@ -9,6 +10,8 @@ import { ErrorState, Skeleton } from '../components/ui'
 export function CreateExisting({ session, from, hint }) {
   const pageId = session.page.id
   const [products, setProducts] = useState(null)
+  const [fromCatalog, setFromCatalog] = useState(false) // true when the picker shows catalog products
+  const [search, setSearch] = useState('')
   const [productKey, setProductKey] = useState(null)
   const [freeText, setFreeText] = useState(false)
   const [description, setDescription] = useState('')
@@ -33,7 +36,7 @@ export function CreateExisting({ session, from, hint }) {
   const start = (promise) => { setPending(true); setError(null); settle(promise) }
 
   const generate = (lang = language) => start(post(`/pages/${pageId}/posts/generate`, {
-    accessToken: session.token, language: lang, hint, ...(freeText ? { description } : { productKey }),
+    accessToken: session.token, language: lang, hint, ...(freeText ? { description } : fromCatalog ? { productId: productKey } : { productKey }),
   }).then(stash))
   const improve = (lang) => start(post(`/pages/${pageId}/posts/improve`, {
     accessToken: session.token, postId: improveId, ...(lang && { language: lang }),
@@ -42,10 +45,18 @@ export function CreateExisting({ session, from, hint }) {
   // first load: the product list, then whatever brought us here (an improve request or a saved draft)
   useEffect(() => {
     let cancelled = false
-    get(`/pages/${pageId}/posts/products`)
-      .then(({ products: list }) => {
+    // the catalog first; a page without one yet falls back to the products found in its photo tags
+    get(`/pages/${pageId}/catalog`)
+      .then(async (cat) => {
+        const items = (session.demo ? applyLocal(cat.products) : cat.products).filter((p) => p.status !== 'sold_out')
+          .sort((a, b) => b.posts - a.posts)
+          .map((p) => ({ key: p.id, label: p.name, posts: p.posts, photo_url: p.thumbnail_url, price: p.price }))
+        if (items.length) return { list: items, catalog: true }
+        return { list: (await get(`/pages/${pageId}/posts/products`)).products, catalog: false }
+      })
+      .then(({ list, catalog }) => {
         if (cancelled) return
-        setProducts(list)
+        setFromCatalog(catalog); setProducts(list)
         if (list.length) setProductKey((k) => k ?? list[0].key)
       })
       .catch((e) => { if (!cancelled) setError(e.message) })
@@ -94,15 +105,19 @@ export function CreateExisting({ session, from, hint }) {
         <Card title="Which product?">
           {!products ? <Skeleton className="h-20" /> : (
             <>
+              {!freeText && fromCatalog && products.length > 12 && (
+                <input type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search your catalog" aria-label="Search your catalog"
+                  className="min-h-11 rounded-btn border border-line px-3 text-[15px]" />
+              )}
               {!freeText && (
                 <ul className="-mx-1 flex gap-2.5 overflow-x-auto px-1 pb-1" aria-label="Products">
-                  {products.map((p) => (
+                  {products.filter((p) => !search.trim() || p.label.toLowerCase().includes(search.toLowerCase().trim())).slice(0, 60).map((p) => (
                     <li key={p.key} className="shrink-0">
                       <button onClick={() => setProductKey(p.key)} aria-pressed={p.key === productKey}
                         className={`flex w-[76px] flex-col items-center gap-1 rounded-card border p-1.5 text-center text-xs ${p.key === productKey ? 'border-accent bg-accent-soft font-bold' : 'border-line'}`}>
                         <img src={p.photo_url} alt="" loading="lazy" className="size-14 rounded-btn bg-track object-cover" />
                         <span className="w-full truncate">{p.label}</span>
-                        <span className="text-[10px] text-muted">{p.posts} posts</span>
+                        <span className="text-[10px] text-muted">{p.price != null ? `Tk ${p.price}` : `${p.posts} posts`}</span>
                       </button>
                     </li>
                   ))}
