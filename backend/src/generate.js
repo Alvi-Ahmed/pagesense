@@ -30,8 +30,20 @@ async function fetchAll(query) {
 
 // ---- text helpers ------------------------------------------------------------------------
 // Bangla script, Banglish (Bangla words in Latin letters, recognised by common words) or English.
-const BANGLISH_WORDS = /\b(?:ache|achhe|nei|korun|korte|korbo|koro|dam|dami|jonno|jante|janaben|pabo|paben|pawa|ekhon|ekhoni|kinbo|dibo|apni|apnar|apnara|amader|amar|inbox|niye|ashlam|esheche|hobe|hoy|ta|ki|na)\b/gi;
-export const detectLanguage = (t) => (bengaliShare(t) > 0.4 ? 'bangla' : (t.match(BANGLISH_WORDS) || []).length >= 3 ? 'banglish' : 'english');
+const BANGLISH_WORDS = new Set(('ache achhe achen nai nei hobe hoy hbe hobo korun korben korbo krmu korte koro kore korbe korsi kinbo kinte kinben kinum nibo nebo nite nilam nibe nimu dibo diben dite den dim dimu '
+  + 'lagbe lagbey lagbei lagche chai chaii chaiiii chaina chacchi jonno jante janaben janan pabo paben pawa pabo pai paichi pathan pathaben pathabo pathiye kemon kemne kivabe kibhabe kevabey kobe koto kotodin koyta koita '
+  + 'ekhon ekhoni ekhane okhane eta ota aita oita ei ami amar amr apni apnar apnara apu apa vai bhai bhaiya amra tomar tumi tui dam dami daam inbox bolen bolun bolo bolbo dekhan dekhben '
+  + 'kotha naki jaiya jabo jete jaben thake thakbe shuru lage lagbo dorkar dorkari sundor shundor khub valo bhalo dhonnobad dhonnyobad').split(/\s+/));
+const BANGLISH_SPLIT = /[^a-z]+/;
+
+// Bangla script, Banglish (Bangla words in Latin letters) or English. Comments are short, so a couple of telltale
+// words, or one in a very short comment, is enough.
+export const detectLanguage = (t) => {
+  if (bengaliShare(t) > 0.4) return 'bangla';
+  const w = String(t ?? '').toLowerCase().split(BANGLISH_SPLIT).filter(Boolean);
+  const hits = w.filter((x) => BANGLISH_WORDS.has(x)).length;
+  return hits >= 2 || (hits >= 1 && w.length <= 6) ? 'banglish' : 'english';
+};
 
 const bengaliShare = (t) => {
   const letters = (t.match(/\p{L}/gu) || []).length;

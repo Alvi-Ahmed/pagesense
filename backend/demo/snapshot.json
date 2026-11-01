@@ -5562,21 +5562,21 @@
   "summary": {
    "actions": [
     "Show the price in every post: 74% of comments (92 of 124) ask for it.",
-    "Post more flat photos for your next items.",
-    "Share upcoming posts on Tuesday morning."
+    "Post more flat photos instead of worn photos.",
+    "Share your next posts on Tuesday morning."
    ],
-   "headline": "Your flat photos in 94 posts get a little more engagement than your typical post.",
+   "headline": "Your flat photos with 94 posts get a little more engagement than your typical post.",
    "supporting": [
     {
-     "text": "Your Tuesday posts in 27 posts get a little more engagement than your typical post.",
+     "text": "Your Tuesday posts with 27 posts get a little more engagement than your typical post.",
      "dimension": "weekday"
     },
     {
-     "text": "Your discount offers in 36 posts get about the same engagement as your typical post.",
+     "text": "Your discount posts with 36 posts get about the same engagement as your typical post.",
      "dimension": "offer_type"
     },
     {
-     "text": "Customers are mostly asking the price in 92 comments, so keep answering kindly.",
+     "text": "Customers left 92 comments asking the price.",
      "dimension": "comment_intents"
     }
    ]
@@ -5595,7 +5595,13 @@
    "source_post_id": "demo_p100",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "02959f37-bfb4-493e-9bcb-9c207564867e",
@@ -5609,7 +5615,13 @@
    "source_post_id": "demo_p79",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "06861b21-89a8-4a74-91d4-872eb82ff780",
@@ -5625,7 +5637,13 @@
    "source_post_id": "demo_p2",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "06ca2603-4d40-45d8-865c-3167edc84191",
@@ -5639,7 +5657,13 @@
    "source_post_id": "demo_p36",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "08bbe666-97dd-4470-b197-dbbd54113603",
@@ -5655,7 +5679,13 @@
    "source_post_id": "demo_p133",
    "created_at": "2026-11-01T19:51:15.472158+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.472158+00:00"
+   "updated_at": "2026-11-01T19:51:15.472158+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "0b8c8eb9-4f5d-4003-9b5b-905c85dd3dec",
@@ -5671,7 +5701,13 @@
    "source_post_id": "demo_p82",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "0bf6a986-c45b-4d32-b737-c8ba77d8cc82",
@@ -5685,7 +5721,13 @@
    "source_post_id": "demo_p47",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "104002a8-402d-4f2e-ac44-3113ac838ce0",
@@ -5701,7 +5743,13 @@
    "source_post_id": "demo_p74",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "17faaf98-c136-4e5d-b3b4-21a5d607343e",
@@ -5715,7 +5763,13 @@
    "source_post_id": "demo_p90",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "183ac1ca-3ee1-4a4d-98fa-a6e26131aa0d",
@@ -5729,7 +5783,13 @@
    "source_post_id": "demo_p3",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "18e8815e-321c-4967-8e87-5a9c52069376",
@@ -5743,7 +5803,13 @@
    "source_post_id": "demo_p60",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "1981ce8b-128a-4ad4-b52c-b6b57af06c1a",
@@ -5757,7 +5823,13 @@
    "source_post_id": "demo_p111",
    "created_at": "2026-11-01T19:51:15.472158+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.472158+00:00"
+   "updated_at": "2026-11-01T19:51:15.472158+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "1d7349cd-73f6-4146-b456-6e89dd9dcccd",
@@ -5771,7 +5843,13 @@
    "source_post_id": "demo_p129",
    "created_at": "2026-11-01T19:51:15.472158+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.472158+00:00"
+   "updated_at": "2026-11-01T19:51:15.472158+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "2253b34a-93ac-4ffa-98b4-4cd23b8cf873",
@@ -5785,7 +5863,13 @@
    "source_post_id": "demo_p94",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "22697ffe-18d1-4c78-90ae-da8005171932",
@@ -5799,7 +5883,13 @@
    "source_post_id": "demo_p89",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "pre_order",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "228623de-0591-43ac-af09-894e5632fa56",
@@ -5813,7 +5903,13 @@
    "source_post_id": "demo_p99",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "240579f3-7f84-4767-9a2a-b321162cf198",
@@ -5827,7 +5923,13 @@
    "source_post_id": "demo_p54",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "29ce4f1a-77de-4611-b353-ac3f13125844",
@@ -5841,7 +5943,13 @@
    "source_post_id": "demo_p140",
    "created_at": "2026-11-01T19:51:15.472158+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.472158+00:00"
+   "updated_at": "2026-11-01T19:51:15.472158+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "2c1381ec-563c-4a05-9a00-8bce556fbdfe",
@@ -5855,7 +5963,13 @@
    "source_post_id": "demo_p101",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "2d5ff397-8631-4bd7-b3d8-52fedf0d43e5",
@@ -5869,7 +5983,13 @@
    "source_post_id": "demo_p38",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "2f91d41c-6fad-4eb8-8ab4-fd037e771883",
@@ -5883,7 +6003,13 @@
    "source_post_id": "demo_p93",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "3035b4c6-ca22-43dd-9a15-f9f67ee40663",
@@ -5901,7 +6027,13 @@
    "source_post_id": "demo_p61",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "30555591-fccb-4ee4-9a5f-ddd5ad3efeb5",
@@ -5920,7 +6052,13 @@
    "source_post_id": "demo_p11",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "329b31ab-b408-4b62-ba2f-99cf38b47a76",
@@ -5936,7 +6074,13 @@
    "source_post_id": "demo_p65",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "34d557f4-85c6-4bc8-be62-998b602db75c",
@@ -5950,7 +6094,13 @@
    "source_post_id": "demo_p43",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "pre_order",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "34ff40ac-b25a-4f52-b4df-2c5988cb49aa",
@@ -5964,7 +6114,13 @@
    "source_post_id": "demo_p33",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "364eed43-9207-432f-8d0b-a63bce539f94",
@@ -5978,7 +6134,13 @@
    "source_post_id": "demo_p13",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "3666b4aa-320d-44e6-9dcb-1c3aa563e49b",
@@ -5992,7 +6154,13 @@
    "source_post_id": "demo_p123",
    "created_at": "2026-11-01T19:51:15.472158+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.472158+00:00"
+   "updated_at": "2026-11-01T19:51:15.472158+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "37a53b31-9d01-49a1-b37b-9a20163fd50e",
@@ -6006,7 +6174,13 @@
    "source_post_id": "demo_p118",
    "created_at": "2026-11-01T19:51:15.472158+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.472158+00:00"
+   "updated_at": "2026-11-01T19:51:15.472158+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "37a838d4-fcc5-442c-b529-ff6043704433",
@@ -6022,7 +6196,13 @@
    "source_post_id": "demo_p26",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "38f01761-420b-41bb-95f8-eb1c4b46258a",
@@ -6036,7 +6216,13 @@
    "source_post_id": "demo_p7",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "pre_order",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "39efc633-9d0b-4b81-be2b-9a04037a1bc8",
@@ -6050,7 +6236,13 @@
    "source_post_id": "demo_p5",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "3d0b3739-6e01-4faa-b6c4-3d125dabd042",
@@ -6064,7 +6256,13 @@
    "source_post_id": "demo_p106",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "3e9aeba6-9e0a-44c0-86c0-4c0d0266ebe8",
@@ -6078,7 +6276,13 @@
    "source_post_id": "demo_p8",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "43b6af38-bb38-430d-9c98-9329d44d167e",
@@ -6092,7 +6296,13 @@
    "source_post_id": "demo_p72",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "45d23124-3b2c-4502-a93f-15bdc9d2fc6a",
@@ -6106,7 +6316,13 @@
    "source_post_id": "demo_p49",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "488fb065-21ac-44eb-87a8-457a4c81d42f",
@@ -6122,7 +6338,13 @@
    "source_post_id": "demo_p76",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "4c65fede-1306-4af5-9a14-6d3a89b4fc7f",
@@ -6138,7 +6360,13 @@
    "source_post_id": "demo_p59",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "4c8dbc23-1abc-4617-a20c-442e7a267749",
@@ -6152,7 +6380,13 @@
    "source_post_id": "demo_p110",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "4ce4bcf1-6380-4e81-85d5-04179e30d439",
@@ -6166,7 +6400,13 @@
    "source_post_id": "demo_p88",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "4d2dd2aa-4bc5-4a68-a3a7-6042a1e3e263",
@@ -6180,7 +6420,13 @@
    "source_post_id": "demo_p150",
    "created_at": "2026-11-01T19:51:15.472158+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.472158+00:00"
+   "updated_at": "2026-11-01T19:51:15.472158+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "4ed155eb-c630-4fa1-9be1-bddcea470f81",
@@ -6196,7 +6442,13 @@
    "source_post_id": "demo_p67",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "4fa34de0-9bf7-4862-bab7-5b2d4e78efd0",
@@ -6210,7 +6462,13 @@
    "source_post_id": "demo_p125",
    "created_at": "2026-11-01T19:51:15.472158+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.472158+00:00"
+   "updated_at": "2026-11-01T19:51:15.472158+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "5233694a-00de-47c9-9765-c421e6544cdf",
@@ -6224,7 +6482,13 @@
    "source_post_id": "demo_p53",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "524f395e-13c2-4de6-9bcf-78eb4c6d470d",
@@ -6238,7 +6502,13 @@
    "source_post_id": "demo_p35",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "54808901-bb7a-450a-91e5-77e66c4c098a",
@@ -6252,7 +6522,13 @@
    "source_post_id": "demo_p28",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "56fc1c53-4400-4982-828b-624a4c6c2925",
@@ -6268,7 +6544,13 @@
    "source_post_id": "demo_p44",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "5a743a34-9b9e-47ec-a584-18a61eef57c8",
@@ -6282,7 +6564,13 @@
    "source_post_id": "demo_p14",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "5c51d6df-1336-4e3b-9ff2-da431b5682f2",
@@ -6296,7 +6584,13 @@
    "source_post_id": "demo_p50",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "5e03623f-6680-46e2-9bee-df8ff139a797",
@@ -6310,7 +6604,13 @@
    "source_post_id": "demo_p131",
    "created_at": "2026-11-01T19:51:15.472158+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.472158+00:00"
+   "updated_at": "2026-11-01T19:51:15.472158+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "5e919d9d-3259-4d88-9932-ebd51caf44c0",
@@ -6326,7 +6626,13 @@
    "source_post_id": "demo_p63",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "5e91bd63-5b89-465e-afe0-773b4fdb60e3",
@@ -6340,7 +6646,13 @@
    "source_post_id": "demo_p81",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "5f395d25-56ac-4558-87d0-f88e1238871b",
@@ -6354,7 +6666,13 @@
    "source_post_id": "demo_p97",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "61204b8a-f7e6-49b3-bfc3-65a53ff18f02",
@@ -6368,7 +6686,13 @@
    "source_post_id": "demo_p64",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "6214e7b2-a7be-4f8d-a6a7-e7b00200eb24",
@@ -6382,7 +6706,13 @@
    "source_post_id": "demo_p92",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "67f918f8-af55-4c48-b9a8-85e9877a6589",
@@ -6398,7 +6728,13 @@
    "source_post_id": "demo_p95",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "68337a7a-1d55-4e7a-b2e1-05f3bef1f0b5",
@@ -6414,7 +6750,13 @@
    "source_post_id": "demo_p104",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "6b4f9739-fb1e-449c-81be-4c1b3e4b2138",
@@ -6428,7 +6770,13 @@
    "source_post_id": "demo_p113",
    "created_at": "2026-11-01T19:51:15.472158+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.472158+00:00"
+   "updated_at": "2026-11-01T19:51:15.472158+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "714e8bc2-c8d5-4b1c-90e6-80a1c24fc72b",
@@ -6442,7 +6790,13 @@
    "source_post_id": "demo_p62",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "75cc73db-25ae-434d-8625-b35eccc88e25",
@@ -6456,7 +6810,13 @@
    "source_post_id": "demo_p24",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "769c2f50-fd07-47bd-85da-b58cb08b9406",
@@ -6470,7 +6830,13 @@
    "source_post_id": "demo_p126",
    "created_at": "2026-11-01T19:51:15.472158+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.472158+00:00"
+   "updated_at": "2026-11-01T19:51:15.472158+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "78dcf4ab-2fcc-4d6f-a3db-8fdee806255e",
@@ -6486,7 +6852,13 @@
    "source_post_id": "demo_p51",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "79563243-df68-4a0e-a336-94cc5241a42a",
@@ -6500,7 +6872,13 @@
    "source_post_id": "demo_p121",
    "created_at": "2026-11-01T19:51:15.472158+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.472158+00:00"
+   "updated_at": "2026-11-01T19:51:15.472158+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "7ad47c21-13b4-457d-8804-863e6642dc85",
@@ -6514,7 +6892,13 @@
    "source_post_id": "demo_p6",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "pre_order",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "7b2937da-be09-4f01-b4c7-bc8d28f4b8a4",
@@ -6528,7 +6912,13 @@
    "source_post_id": "demo_p134",
    "created_at": "2026-11-01T19:51:15.472158+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.472158+00:00"
+   "updated_at": "2026-11-01T19:51:15.472158+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "7c08dfc9-cb4c-4f28-9b52-e468bb7b2fb6",
@@ -6542,7 +6932,13 @@
    "source_post_id": "demo_p18",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "7c600bf6-1963-43d1-8a18-af05cc3de3b8",
@@ -6558,7 +6954,13 @@
    "source_post_id": "demo_p130",
    "created_at": "2026-11-01T19:51:15.472158+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.472158+00:00"
+   "updated_at": "2026-11-01T19:51:15.472158+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "7d1609fa-9ce1-4d63-9bd7-a3f27e1843ec",
@@ -6572,7 +6974,13 @@
    "source_post_id": "demo_p142",
    "created_at": "2026-11-01T19:51:15.472158+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.472158+00:00"
+   "updated_at": "2026-11-01T19:51:15.472158+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "7dbfbd51-4521-4e8c-b4ba-ec89825e52de",
@@ -6586,7 +6994,13 @@
    "source_post_id": "demo_p4",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "pre_order",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "7fd51cbb-9d88-4e86-b2b0-23825cff51d1",
@@ -6600,7 +7014,13 @@
    "source_post_id": "demo_p117",
    "created_at": "2026-11-01T19:51:15.472158+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.472158+00:00"
+   "updated_at": "2026-11-01T19:51:15.472158+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "8304037d-f3e5-4f9b-a100-3496450daf4d",
@@ -6614,7 +7034,13 @@
    "source_post_id": "demo_p73",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "87d50ea5-1e43-48fe-9c44-57fd1f6139cd",
@@ -6628,7 +7054,13 @@
    "source_post_id": "demo_p116",
    "created_at": "2026-11-01T19:51:15.472158+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.472158+00:00"
+   "updated_at": "2026-11-01T19:51:15.472158+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "8a9944e2-2348-4d7e-9265-35bc6d644522",
@@ -6642,7 +7074,13 @@
    "source_post_id": "demo_p48",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "8d0ffcbf-de6a-4bda-841f-d609d475ab31",
@@ -6656,7 +7094,13 @@
    "source_post_id": "demo_p87",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "8efa28d1-addc-4875-bdb3-24a27b7bbc7e",
@@ -6670,7 +7114,13 @@
    "source_post_id": "demo_p1",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "91f0f8cc-dea9-40df-a7bc-576075ede4af",
@@ -6684,7 +7134,13 @@
    "source_post_id": "demo_p144",
    "created_at": "2026-11-01T19:51:15.472158+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.472158+00:00"
+   "updated_at": "2026-11-01T19:51:15.472158+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "9b3f20e3-9ebf-41bc-88cf-e48b66e59308",
@@ -6698,7 +7154,13 @@
    "source_post_id": "demo_p84",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "9c04df23-1abe-45ff-b5a6-77019748ec65",
@@ -6712,7 +7174,13 @@
    "source_post_id": "demo_p85",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "9c65f0c8-ab8e-4a80-b499-07332261af76",
@@ -6726,7 +7194,13 @@
    "source_post_id": "demo_p16",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "9dbdcce8-e2ac-4f3b-b749-a7fb8be4d015",
@@ -6740,7 +7214,13 @@
    "source_post_id": "demo_p80",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "a1ab9c07-b36f-49ec-9670-5fde2eacb121",
@@ -6754,7 +7234,13 @@
    "source_post_id": "demo_p136",
    "created_at": "2026-11-01T19:51:15.472158+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.472158+00:00"
+   "updated_at": "2026-11-01T19:51:15.472158+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "a3b9f249-9758-4202-a024-1fe5e418b1fe",
@@ -6768,7 +7254,13 @@
    "source_post_id": "demo_p108",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "a3ea583e-e07a-4a61-a377-a6042ce583d6",
@@ -6782,7 +7274,13 @@
    "source_post_id": "demo_p148",
    "created_at": "2026-11-01T19:51:15.472158+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.472158+00:00"
+   "updated_at": "2026-11-01T19:51:15.472158+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "a57f2e7a-4c0c-43a3-942d-d554ae09215f",
@@ -6796,7 +7294,13 @@
    "source_post_id": "demo_p19",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "a5cde4a7-d669-403d-a7a4-600f8b09db56",
@@ -6812,7 +7316,13 @@
    "source_post_id": "demo_p70",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "a66b47fa-4868-447b-88ef-6ebcc7ba340e",
@@ -6829,7 +7339,13 @@
    "source_post_id": "demo_p69",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "a74a37df-ba06-464f-8b42-63e50728abda",
@@ -6843,7 +7359,13 @@
    "source_post_id": "demo_p78",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "a7f49d85-fdd5-4676-a613-00473783b8f0",
@@ -6857,7 +7379,13 @@
    "source_post_id": "demo_p27",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "a8460f23-1a63-4a45-abde-81d91ccbd82c",
@@ -6871,7 +7399,13 @@
    "source_post_id": "demo_p124",
    "created_at": "2026-11-01T19:51:15.472158+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.472158+00:00"
+   "updated_at": "2026-11-01T19:51:15.472158+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "ac41cf39-e5f1-482c-a9e8-c70b355a749f",
@@ -6885,7 +7419,13 @@
    "source_post_id": "demo_p105",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "aebb8bc3-86a0-4f99-9999-dc124a98a3c1",
@@ -6899,7 +7439,13 @@
    "source_post_id": "demo_p141",
    "created_at": "2026-11-01T19:51:15.472158+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.472158+00:00"
+   "updated_at": "2026-11-01T19:51:15.472158+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "b20e7416-5b52-4cb5-8827-02748c1abe59",
@@ -6913,7 +7459,13 @@
    "source_post_id": "demo_p98",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "b2369c0d-8d00-40d7-90ec-b289d29a7d01",
@@ -6927,7 +7479,13 @@
    "source_post_id": "demo_p103",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "b2f40796-e012-4f01-aba3-b971bbbe4a5d",
@@ -6941,7 +7499,13 @@
    "source_post_id": "demo_p146",
    "created_at": "2026-11-01T19:51:15.472158+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.472158+00:00"
+   "updated_at": "2026-11-01T19:51:15.472158+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "b3c4d280-c9a6-4799-8790-c84207a765b8",
@@ -6957,7 +7521,13 @@
    "source_post_id": "demo_p102",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "b47a3c69-4d80-4f34-8b9e-2553165c377b",
@@ -6971,7 +7541,13 @@
    "source_post_id": "demo_p109",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "pre_order",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "b50f8917-bbf1-49b1-9691-0cc56766d5dd",
@@ -6985,7 +7561,13 @@
    "source_post_id": "demo_p139",
    "created_at": "2026-11-01T19:51:15.472158+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.472158+00:00"
+   "updated_at": "2026-11-01T19:51:15.472158+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "be6bd141-b5e2-4af4-8050-6e6e872c2052",
@@ -7001,7 +7583,13 @@
    "source_post_id": "demo_p55",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "bf44b90d-7c68-4ed4-9134-9f8af0674f54",
@@ -7015,7 +7603,13 @@
    "source_post_id": "demo_p114",
    "created_at": "2026-11-01T19:51:15.472158+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.472158+00:00"
+   "updated_at": "2026-11-01T19:51:15.472158+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "c6e7425b-bd98-47e4-ab8c-72f4e3b78865",
@@ -7029,7 +7623,13 @@
    "source_post_id": "demo_p96",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "c701b40e-7306-4b99-a764-9a94a9ebf5a3",
@@ -7045,7 +7645,13 @@
    "source_post_id": "demo_p32",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "c81b6030-8e80-4893-bc0f-33d02f202cea",
@@ -7061,7 +7667,13 @@
    "source_post_id": "demo_p46",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "cb872839-d077-4718-88af-3ebcc869ba3d",
@@ -7077,7 +7689,13 @@
    "source_post_id": "demo_p20",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "cc58e95b-4a80-4b56-aef6-755d0d49e614",
@@ -7091,7 +7709,13 @@
    "source_post_id": "demo_p15",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "ceab7e7d-1ce8-4627-8117-e932893607e9",
@@ -7105,7 +7729,13 @@
    "source_post_id": "demo_p10",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "cf6e3c05-21bb-4c5e-b298-bb6a1cbaa10b",
@@ -7119,7 +7749,13 @@
    "source_post_id": "demo_p12",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "cfb0d0c3-f1ac-40ae-9951-aae3c90001cc",
@@ -7133,7 +7769,13 @@
    "source_post_id": "demo_p42",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "d103faa3-098b-49a0-9fa1-1f93eeeaf0f5",
@@ -7147,7 +7789,13 @@
    "source_post_id": "demo_p37",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "d18e8372-4f91-423e-b841-8bd6f6f715ac",
@@ -7161,7 +7809,13 @@
    "source_post_id": "demo_p39",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "d5566561-f6ea-42a5-be3f-275a4c228867",
@@ -7175,7 +7829,13 @@
    "source_post_id": "demo_p138",
    "created_at": "2026-11-01T19:51:15.472158+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.472158+00:00"
+   "updated_at": "2026-11-01T19:51:15.472158+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "d562e3ad-a402-4a88-98b1-a3faae2edc5d",
@@ -7189,7 +7849,13 @@
    "source_post_id": "demo_p115",
    "created_at": "2026-11-01T19:51:15.472158+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.472158+00:00"
+   "updated_at": "2026-11-01T19:51:15.472158+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "d7c61976-52e6-4f22-993c-2558d569073f",
@@ -7203,7 +7869,13 @@
    "source_post_id": "demo_p56",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "daf1944a-93ba-4cb0-b145-6f4aafa4e6ad",
@@ -7219,7 +7891,13 @@
    "source_post_id": "demo_p17",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "ddf32294-f7ab-4fea-b937-3455f1375fe1",
@@ -7233,7 +7911,13 @@
    "source_post_id": "demo_p23",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "defbd87a-62ad-4e00-9079-32f34d34a17e",
@@ -7249,7 +7933,13 @@
    "source_post_id": "demo_p68",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "df1b2f57-e98f-405a-8361-05bb90dad7e1",
@@ -7265,7 +7955,13 @@
    "source_post_id": "demo_p52",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "e12010f9-36bc-4f0b-9c55-080c07589c2d",
@@ -7281,7 +7977,13 @@
    "source_post_id": "demo_p22",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "e252b512-5c20-443d-8121-3052c10fb39d",
@@ -7295,7 +7997,13 @@
    "source_post_id": "demo_p119",
    "created_at": "2026-11-01T19:51:15.472158+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.472158+00:00"
+   "updated_at": "2026-11-01T19:51:15.472158+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "e37d1b6b-5a9d-4bd7-a942-3b0b3202bc48",
@@ -7309,7 +8017,13 @@
    "source_post_id": "demo_p112",
    "created_at": "2026-11-01T19:51:15.472158+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.472158+00:00"
+   "updated_at": "2026-11-01T19:51:15.472158+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "e8deba93-b241-4764-987f-15d795761723",
@@ -7323,7 +8037,13 @@
    "source_post_id": "demo_p132",
    "created_at": "2026-11-01T19:51:15.472158+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.472158+00:00"
+   "updated_at": "2026-11-01T19:51:15.472158+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "ea7f11f3-1c27-4483-b07e-9f6e12766f71",
@@ -7337,7 +8057,13 @@
    "source_post_id": "demo_p9",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "eaa5b85a-d7f0-46cf-b6fe-78e5db4a3e5e",
@@ -7353,7 +8079,13 @@
    "source_post_id": "demo_p58",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "ead48cf7-23dd-469c-aecc-1868a2fbc1cb",
@@ -7367,7 +8099,13 @@
    "source_post_id": "demo_p127",
    "created_at": "2026-11-01T19:51:15.472158+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.472158+00:00"
+   "updated_at": "2026-11-01T19:51:15.472158+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "ebfe9a9b-e5b6-42c1-ab91-fa7b469bbbef",
@@ -7381,7 +8119,13 @@
    "source_post_id": "demo_p128",
    "created_at": "2026-11-01T19:51:15.472158+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.472158+00:00"
+   "updated_at": "2026-11-01T19:51:15.472158+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "eca9e7af-3ca5-49de-a390-cc889fbc4210",
@@ -7397,7 +8141,13 @@
    "source_post_id": "demo_p57",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "pre_order",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "ecc6dd4b-5af1-4ab3-b8d0-d2ed6d4cf1cf",
@@ -7411,7 +8161,13 @@
    "source_post_id": "demo_p91",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "ed2e1fe8-76de-471c-9597-0ebebaa887db",
@@ -7425,7 +8181,13 @@
    "source_post_id": "demo_p40",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "pre_order",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "f13eb075-8d96-4298-91dc-9f2bdc848b6b",
@@ -7439,7 +8201,13 @@
    "source_post_id": "demo_p86",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "f2a00182-d8b0-433d-85f8-9e9090d94fc4",
@@ -7453,7 +8221,13 @@
    "source_post_id": "demo_p25",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "f649be94-3ad4-446b-9284-435871a53919",
@@ -7467,7 +8241,13 @@
    "source_post_id": "demo_p83",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "fa61bf2e-f602-4206-8330-fef607357447",
@@ -7481,7 +8261,13 @@
    "source_post_id": "demo_p41",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   },
   {
    "id": "ff2363a1-60bb-4a76-bbd7-da8dca7a5557",
@@ -7495,7 +8281,13 @@
    "source_post_id": "demo_p45",
    "created_at": "2026-11-01T19:51:15.188224+00:00",
    "status": "in_stock",
-   "updated_at": "2026-11-01T19:51:15.188224+00:00"
+   "updated_at": "2026-11-01T19:51:15.188224+00:00",
+   "product_phrase": null,
+   "offer": null,
+   "stock": null,
+   "photo_paths": [],
+   "analysis": null,
+   "source": "uploaded"
   }
  ],
  "product_posts": [
@@ -8059,5 +8851,6 @@
    "product_id": "228623de-0591-43ac-af09-894e5632fa56",
    "post_id": "demo_p99"
   }
- ]
+ ],
+ "orders": []
 }

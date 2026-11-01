@@ -40,9 +40,11 @@ for (let i = 0; i < ids.length; i += 150) {
   snap.product_posts.push(...await fetchAll(() => db.from('product_posts').select('product_id, post_id').in('product_id', ids.slice(i, i + 150)).order('post_id')));
 }
 
+snap.orders = await fetchAll(() => db.from('orders').select('*').eq('page_id', 'demo').order('id'));
+
 await buildPlaybook('demo');
 const { data, summary } = await latestPlaybook('demo');
 snap.playbook = { data, summary };
 
 fs.writeFileSync(file, JSON.stringify(snap, null, 1));
-console.log(`snapshot: ${classified}/${snap.comments.length} comments with intent, ${snap.post_tags.length} post tags, ${snap.products.length} products (${snap.product_posts.length} post links), playbook saved`);
+console.log(`snapshot: ${classified}/${snap.comments.length} comments with intent, ${snap.post_tags.length} post tags, ${snap.products.length} products (${snap.product_posts.length} post links), ${snap.orders.length} orders and leads, playbook saved`);

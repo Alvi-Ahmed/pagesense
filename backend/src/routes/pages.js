@@ -7,10 +7,12 @@ import { db } from '../db.js';
 import { startAnalysis, latestAnalysis } from '../analysis.js';
 import { latestPlaybook, previewPlaybook, setBoosted } from '../playbook.js';
 import { needsReply } from '../replies.js';
+import { hasAuthorColumns } from '../schema.js';
 import { generateFromCatalog, generateNewProduct, generatePost, improvePost, listDrafts, listProducts, saveDraft, updateDraft } from '../generate.js';
 import { analyzePhotos, saveNewProduct } from '../newProduct.js';
 import { getProduct, listCatalog, mergeProducts, setStatus, updateProduct } from '../catalog.js';
 import { savedUpdates, suggestUpdates } from '../catalogUpdates.js';
+import { convertToOrder, exportConfirmed, listOrders, setOrderStatus, suggestReply, updateOrder } from '../orders.js';
 import { cleanPhoto, refFor, showableUrl, storePhoto, MAX_BYTES } from '../photos.js';
 import { rateLimit } from '../rateLimit.js';
 
@@ -225,10 +227,29 @@ router.post('/:id/catalog/:productId/updates', requireManager, generationLimit, 
   suggestUpdates(req.params.id, req.params.productId, { ...req.body, save: req.params.id !== DEMO_PAGE_ID, trustKind: req.params.id === DEMO_PAGE_ID })));
 router.get('/:id/catalog/:productId/updates', reply((req) => savedUpdates(req.params.id, req.params.productId, req.query.kind === 'restock' ? 'restock' : 'sold_out')));
 
+// ---- orders (items 7 and 17) ----------------------------------------------------------------------
+// Orders hold what customers wrote, phone numbers included, so a real page proves who is asking on every call
+// (token in the x-access-token header for reads). The demo is read-only: status changes and edits stay in the
+// visitor's browser. Suggested replies are allowed everywhere and share the generation limit.
+router.get('/:id/orders', requireManager, reply((req) => listOrders(req.params.id, req.query.status)));
+router.get('/:id/orders/export', requireManager, async (req, res) => {
+  try {
+    const csv = await exportConfirmed(req.params.id);
+    res.set({ 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': `attachment; filename="orders-confirmed-${new Date().toISOString().slice(0, 10)}.csv"` }).send(`\uFEFF${csv}`);
+  } catch (err) {
+    console.error(err.message);
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+router.patch('/:id/orders/:orderId', rejectDemoWrites, requireManager, reply((req) => updateOrder(req.params.id, req.params.orderId, req.body)));
+router.post('/:id/orders/:orderId/status', rejectDemoWrites, requireManager, reply((req) => setOrderStatus(req.params.id, req.params.orderId, req.body.status)));
+router.post('/:id/orders/:orderId/convert', rejectDemoWrites, requireManager, reply((req) => convertToOrder(req.params.id, req.params.orderId)));
+router.post('/:id/orders/:orderId/reply', requireManager, generationLimit, reply((req) => suggestReply(req.params.id, req.params.orderId)));
+
 // Comments that need an answer, for Home.
 router.get('/:id/replies', async (req, res) => {
   try {
-    res.json(await needsReply(req.params.id));
+    res.json(await needsReply(req.params.id, { intent: req.query.intent, limit: req.query.limit }));
   } catch (err) {
     console.error(err.message);
     res.status(500).json({ error: err.message });
@@ -245,14 +266,21 @@ router.get('/:id/summary', async (req, res) => {
       return count ?? 0;
     };
     const head = { count: 'exact', head: true };
+    // The tiles link to lists of comments that still need the owner, so they count the same ones: not written by the
+    // page itself and not answered yet (once the sync has recorded authors).
+    const open = await hasAuthorColumns();
+    const waiting = (intent) => {
+      const q = db.from('comments').select('*, posts!inner(page_id)', head).eq('posts.page_id', id).eq('intent', intent);
+      return open ? q.eq('is_page', false).eq('answered', false) : q;
+    };
     const [posts, comments, tagged, classified, order, price, complaint, page] = await Promise.all([
       count(db.from('posts').select('*', head).eq('page_id', id)),
       count(db.from('comments').select('*, posts!inner(page_id)', head).eq('posts.page_id', id)),
       count(db.from('post_tags').select('*, posts!inner(page_id)', head).eq('posts.page_id', id)),
       count(db.from('comments').select('*, posts!inner(page_id)', head).eq('posts.page_id', id).not('intent', 'is', null)),
-      count(db.from('comments').select('*, posts!inner(page_id)', head).eq('posts.page_id', id).eq('intent', 'order_intent')),
-      count(db.from('comments').select('*, posts!inner(page_id)', head).eq('posts.page_id', id).eq('intent', 'price_question')),
-      count(db.from('comments').select('*, posts!inner(page_id)', head).eq('posts.page_id', id).eq('intent', 'complaint')),
+      count(waiting('order_intent')),
+      count(waiting('price_question')),
+      count(waiting('complaint')),
       db.from('pages').select('id, name').eq('id', id).maybeSingle(),
     ]);
     if (!page.data) return res.status(404).json({ error: 'Page not connected' });

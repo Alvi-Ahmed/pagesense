@@ -4,6 +4,7 @@ import { classifyPage, hasUnclassifiedSince } from './classify.js';
 import { buildPlaybook, latestPlaybook } from './playbook.js';
 import { hasStageTable } from './schema.js';
 import { catalogReady, extractCatalog, hasUncataloguedPosts } from './catalog.js';
+import { createOrders, hasNewOrderComments } from './orders.js';
 import { DEMO_PAGE_ID } from './demo.js';
 
 // Pipeline stages, in order. `version` goes up when a stage's logic changes enough that old results should be
@@ -20,6 +21,12 @@ export const STAGES = [
     name: 'classification', version: 1,
     run: (pageId, p) => classifyPage(pageId, p),
     hasNewWork: hasUnclassifiedSince,
+  },
+  {
+    // order and lead cards from the comments just classified; a comment that already has a card is never touched
+    name: 'orders', version: 1,
+    run: (pageId, p) => createOrders(pageId, p),
+    hasNewWork: (pageId) => hasNewOrderComments(pageId),
   },
   {
     name: 'playbook', version: 1,
@@ -56,12 +63,19 @@ async function stageRecords(pageId) {
   return new Map(data.map((r) => [r.stage, r]));
 }
 
+// A stage whose name the table refuses (migration 007 not run yet) cannot be remembered, so it would look "never run"
+// on every check. It is skipped on automatic runs until the next restart instead of looping.
+const unrecordable = new Set();
+
 async function recordStage(pageId, stage) {
   if (!(await hasStageTable())) return;
   const { error } = await db.from('analysis_stages').upsert({
     page_id: pageId, stage: stage.name, version: stage.version, completed_at: new Date().toISOString(),
   });
-  if (error) console.error('could not record stage', stage.name, error.message);
+  if (error) {
+    console.error('could not record stage', stage.name, error.message);
+    if (error.code === '23514') unrecordable.add(stage.name); // check constraint: run db/007_stage_names.sql
+  }
 }
 
 // ---- planning -----------------------------------------------------------------------------
@@ -76,6 +90,7 @@ export async function plan(pageId, { force = false } = {}) {
   const planned = [];
   for (const stage of STAGES) {
     if (stage.requires && !(await stage.requires())) continue; // its migration has not been run yet
+    if (unrecordable.has(stage.name) && !force) continue; // see recordStage
     // without the table there is no history: treat every stage as current and look for missing items only
     const rec = records ? records.get(stage.name) : { version: stage.version, completed_at: null };
     let reason = null;
@@ -84,7 +99,7 @@ export async function plan(pageId, { force = false } = {}) {
     else if (!rec) reason = 'never run';
     else if (rec.version < stage.version) { reason = `version ${rec.version} -> ${stage.version}`; all = true; }
     else if (await stage.hasNewWork(pageId, rec.completed_at)) reason = 'new items';
-    else if (stage.name === 'playbook' && planned.length) reason = 'earlier stages changed the data';
+    else if (stage.name === 'playbook' && planned.some((x) => ['tagging', 'classification'].includes(x.stage.name))) reason = 'earlier stages changed the data';
     if (reason) planned.push({ stage, all, reason });
   }
   return planned;

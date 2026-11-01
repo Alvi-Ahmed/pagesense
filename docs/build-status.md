@@ -59,6 +59,28 @@ Status: DONE / PARTIAL / MISSING. Update this file after each item.
    numbers only from the original or the similar product, no invented prices, no names, original text kept
    (50%+ of its words), a clear sold-out line required. Restock offers "back in stock" versions. The owner copies
    each one; "Update on Facebook" is disabled until item 11. POST/GET /pages/:id/catalog/:productId/updates.
+7. DONE: Orders (src/orders.js). Stage `orders` of the pipeline (after classification): one card per comment the
+   classifier called order_intent (an order) or interested (a lead), skipping the page's own comments and ones the
+   page already answered; the customer's direct replies are attached. Linked to the catalog product through the post.
+   Size, color, quantity and address are read from the comment and verified against its text (anything not literally
+   stated is dropped, a number after "size" is never a quantity); phone numbers are found by pattern. Missing
+   details are flagged (size, quantity, phone, address) and never filled in; quantity is never defaulted to 1. Facebook
+   hides who commented, so a card says "Customer on <post>" and keeps the comment id plus a link that opens the
+   comment on Facebook. Status to_review -> confirmed -> delivered, or cancelled, owner-controlled and validated
+   (a lead must be marked as an order first). "Ask for details" writes a short reply in the customer's language
+   (Bangla / Banglish / English, detected from the comment) that asks only for what is missing; checked in code, never
+   sent. CSV export of confirmed orders (product, size, color, quantity, comment link, status, date, plus phone and
+   address). GET/PATCH /pages/:id/orders, POST .../status, .../convert, .../reply, GET .../orders/export. Orders hold
+   customers' details, so a real page proves who is asking on every call (x-access-token). The table keeps its own
+   status words (pending/fulfilled) and an unknown quantity is stored as "missing" because orders.quantity is NOT
+   NULL; db/007_stage_names.sql lets the pipeline remember the stage and relaxes that constraint. Until it is run the
+   stage still works but is skipped on automatic runs after the first check per restart.
+8. DONE: Sold-out updates (src/catalogUpdates.js). Marking a product sold out writes, for its newest linked posts
+   (5 at a time, "write more" for the rest), a caption update with muse-spark-1.3: the original unchanged plus a
+   SOLD OUT line and a pointer to a similar in-stock product from the catalog. Same grounding as generation:
+   numbers only from the original or the similar product, no invented prices, no names, original text kept
+   (50%+ of its words), a clear sold-out line required. Restock offers "back in stock" versions. The owner copies
+   each one; "Update on Facebook" is disabled until item 11. POST/GET /pages/:id/catalog/:productId/updates.
 7. MISSING: Orders: orders and leads from comments, missing details flagged, owner confirmation.
 8. MISSING: Sold-out updates: suggested caption updates for posts featuring a sold-out product.
 9. DONE: Post generation. POST /pages/:id/posts/generate (product from post_tags or free text; bangla |
@@ -103,9 +125,10 @@ Status: DONE / PARTIAL / MISSING. Update this file after each item.
 
 ## Frontend (match docs/design/*.png)
 13. DONE: App shell, 5-tab bottom nav, analysis progress banner with retry.
-14. DONE: Home: "Post this today" card from the playbook (with "Create this post"), drafts, counts from comment intents, "Needs your
-    reply" list (complaints and orders first; comments the page already answered are left out once the
-    sync has recorded authors, see item 1). The demo has no author data, so it cannot mark answered.
+14. DONE: Home: "Post this today" card from the playbook (with "Create this post"), "Continue your draft" card for the
+    latest draft, counts from comment intents that match their lists (possible orders opens Orders; price questions and
+    complaints filter the "Needs your reply" list, with "Show all" to clear), each reply links to its comment on
+    Facebook, and the list shows comments the page has not answered. The demo has no Facebook ids, so no links there.
 15. DONE: Playbook screen: headline, strongest pattern with bar comparison, more findings, what
     customers ask before buying, Do this next, "Was this boosted?" toggles, all other patterns.
     Built from the written spec: docs/design/playbook.png is not in the repo, so check it against the mockup.
@@ -116,7 +139,13 @@ Status: DONE / PARTIAL / MISSING. Update this file after each item.
     Copy caption, Schedule / Post to page disabled with a coming-soon note (item 11). "Improve this post" on the
     Playbook's weakest recent posts; collapsible "How this post was made" shows the agent's steps; Home's "Create this post" prefills the playbook suggestion; drafts on Home.
     Built from the written spec: docs/design/create.png is not in the repo. Branded photo comes with item 10.
-17. MISSING: Orders screen.
+17. DONE: Orders screen: tabs To review / Confirmed / Delivered with counts (Cancelled shown when there are any); order
+    cards with product, size, quantity, color, phone, address, the original comment and the customer's replies, the
+    missing-details warning, Open comment, Ask for details (suggested reply with Copy), Edit, Confirm / Undo, Mark
+    delivered, Cancel. Leads are dashed and blue with "Mark as order". Export button on the Confirmed tab. Built from
+    the written spec: docs/design/orders.png is not in the repo. Demo: read-only on the server; status changes, edits
+    and "mark as order" stay in the tab, the CSV is built in the browser, suggested replies still come from the model
+    (rate limited). The demo data has no comments that ask to buy, so its Orders screen is empty.
 18. DONE: Catalog screen: search, status filters (All / In stock / Pre-order / Sold out / No price), rows with the
     linked post's photo, status chip and post count, the missing-price warning ("X products have no price. Add a
     price once and every new post uses it."), a product panel to edit details, mark sold out / restock, switch

@@ -84,12 +84,14 @@ async function fetchAll(query) {
 // and neither can the page's own replies: they are not customers.
 async function unclassified(pageId, all = false) {
   const skipPage = await hasAuthorColumns();
-  return fetchAll(() => {
+  // comments with an order card are the owner's to judge (e.g. a lead marked as an order): re-classifying must not undo that
+  const reviewed = all ? new Set((await fetchAll(() => db.from('orders').select('comment_id').eq('page_id', pageId).order('id'))).map((o) => o.comment_id)) : new Set();
+  return (await fetchAll(() => {
     let q = db.from('comments').select('id, post_id, message, posts!inner(page_id)')
       .eq('posts.page_id', pageId).not('message', 'is', null).neq('message', '').order('id');
     if (!all) q = q.is('intent', null);
     return skipPage ? q.eq('is_page', false) : q;
-  });
+  })).filter((c) => !reviewed.has(c.id));
 }
 
 // Customer comments with text and no intent that arrived after `since` (a timestamp), or ever if no timestamp.

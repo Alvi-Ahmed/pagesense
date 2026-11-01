@@ -10,6 +10,8 @@ export const TASKS = {
   playbook: { provider: process.env.PROVIDER_PLAYBOOK || BULK, lowEffort: true },
   photo_analysis: { provider: process.env.PROVIDER_PHOTO_ANALYSIS || BULK, lowEffort: true },
   catalog_extraction: { provider: process.env.PROVIDER_CATALOG_EXTRACTION || BULK, lowEffort: true },
+  order_extraction: { provider: process.env.PROVIDER_ORDER_EXTRACTION || BULK, lowEffort: true },
+  order_reply: { provider: process.env.PROVIDER_ORDER_REPLY || 'meta', lowEffort: true },
   name_scan: { provider: process.env.PROVIDER_NAME_SCAN || BULK, lowEffort: true },
   post_generation: { provider: process.env.PROVIDER_POST_GENERATION || 'meta', lowEffort: false },
 };
