@@ -27,7 +27,7 @@ export const PROVIDERS = {
       baseURL: process.env.BASETEN_BASE_URL || 'https://inference.baseten.co/v1',
       apiKey: process.env.BASETEN_API_KEY,
     }),
-    model: process.env.BASETEN_MODEL || 'meta-models/muse-spark-open',
+    model: process.env.BASETEN_MODEL || 'meta-models/muse-spark-open-1026',
     lowestEffort: 'low',
   },
 };

@@ -21,7 +21,7 @@ Status: DONE / PARTIAL / MISSING. Update this file after each item.
    stock_or_restock, order_intent, interested, delivery_question, product_question, complaint,
    negotiation, praise, other), plus size and color. Runs as a stage of the analysis job.
    75 comments per request, structured output, lowest reasoning effort. Bulk tasks
-   default to Baseten (meta-models/muse-spark-open); post generation stays on the Meta API.
+   default to Baseten (meta-models/muse-spark-open-1026); post generation stays on the Meta API.
    Provider layer: src/ai.js maps each task to a provider (BULK_PROVIDER, default baseten, or PROVIDER_<TASK>);
    a failing Baseten call falls back to muse-spark-1.3 and is logged.
    Demo snapshot carries tags, intents and the playbook (npm run demo:save-analysis refreshes it).
@@ -181,6 +181,6 @@ Status: DONE / PARTIAL / MISSING. Update this file after each item.
 ## Build order for what's left
 4 → 5 + 15 → 14 → 9 + 16 → 6 + 18 → 8 → 7 + 17 → 10 → 11 → 20
 
-Known: Baseten chat calls returned 403 ("please check the api-key") on 2 Nov 2026, so bulk tasks ran on the Meta
-fallback; check the Baseten key or set BULK_PROVIDER=meta. Demo post photos are Facebook image links and some show the real shop's name, phone number and website
+Known: the hackathon Baseten key only works with the model id meta-models/muse-spark-open-1026 (the plain
+muse-spark-open id returns 403); the default is set to it. Demo post photos are Facebook image links and some show the real shop's name, phone number and website
 printed in the image itself. demo:scan checks text only.
