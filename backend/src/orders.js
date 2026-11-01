@@ -2,6 +2,7 @@ import { db } from './db.js';
 import { clip, completeJSON } from './ai.js';
 import { numbersIn, toAscii } from './textutil.js';
 import { checkCaption, detectLanguage } from './generate.js';
+import { onOrderStatusChange } from './stock.js';
 
 // Item 7. Orders come from comments classified order_intent, leads from interested ones. Facebook does not tell us who
 // commented, so an order is "Customer on <post>", with the comment id and a link that opens it on Facebook.
@@ -283,7 +284,11 @@ export async function setOrderStatus(pageId, id, status) {
   if (!MOVES[view.status].includes(status)) throw fail(`An order that is ${view.status.replace('_', ' ')} cannot go to ${status.replace('_', ' ')}.`, 409);
   const { error } = await db.from('orders').update({ status: TO_DB[status], updated_at: new Date().toISOString() }).eq('id', id).eq('page_id', pageId);
   if (error) throw error;
-  return (await getOne(pageId, id)).view;
+  // confirming takes the order's quantity from stock; moving it back (undo, cancel) puts exactly that back
+  let stock_note = null;
+  try { stock_note = await onOrderStatusChange(pageId, view, view.status, status); }
+  catch (e) { console.error('stock update failed:', e.message); stock_note = 'The order was updated, but its stock could not be changed. Check the product\'s stock.'; }
+  return { ...(await getOne(pageId, id)).view, stock_note };
 }
 
 // "Mark as order": the owner says this lead is an order. The comment's intent follows, so the home counts agree, and

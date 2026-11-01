@@ -13,6 +13,7 @@ import { analyzePhotos, saveNewProduct } from '../newProduct.js';
 import { getProduct, listCatalog, mergeProducts, setStatus, updateProduct } from '../catalog.js';
 import { savedUpdates, suggestUpdates } from '../catalogUpdates.js';
 import { convertToOrder, exportConfirmed, listOrders, setOrderStatus, suggestReply, updateOrder } from '../orders.js';
+import { MAX_BYTES as MAX_SHEET, applyImport, excelBuffer, exportStock, getVariants, previewImport, setLowStockThreshold, setVariants, stockAlerts } from '../stock.js';
 import { cleanPhoto, refFor, showableUrl, storePhoto, MAX_BYTES } from '../photos.js';
 import { rateLimit } from '../rateLimit.js';
 
@@ -216,7 +217,7 @@ const reply = (fn) => async (req, res) => {
 };
 
 router.get('/:id/catalog', reply((req) => listCatalog(req.params.id, { q: req.query.q, status: req.query.status })));
-router.get('/:id/catalog/:productId', reply((req) => getProduct(req.params.id, req.params.productId)));
+router.get('/:id/catalog/:productId', reply(async (req) => ({ ...(await getProduct(req.params.id, req.params.productId)), variants: await getVariants(req.params.id, req.params.productId) })));
 router.patch('/:id/catalog/:productId', rejectDemoWrites, requireManager, reply((req) => updateProduct(req.params.id, req.params.productId, req.body)));
 router.post('/:id/catalog/:productId/status', rejectDemoWrites, requireManager, reply((req) => setStatus(req.params.id, req.params.productId, req.body.status)));
 router.post('/:id/catalog/merge', rejectDemoWrites, requireManager, reply((req) => mergeProducts(req.params.id, req.body.keepId, req.body.mergeId)));
@@ -245,6 +246,40 @@ router.patch('/:id/orders/:orderId', rejectDemoWrites, requireManager, reply((re
 router.post('/:id/orders/:orderId/status', rejectDemoWrites, requireManager, reply((req) => setOrderStatus(req.params.id, req.params.orderId, req.body.status)));
 router.post('/:id/orders/:orderId/convert', rejectDemoWrites, requireManager, reply((req) => convertToOrder(req.params.id, req.params.orderId)));
 router.post('/:id/orders/:orderId/reply', requireManager, generationLimit, reply((req) => suggestReply(req.params.id, req.params.orderId)));
+
+// ---- stock from the owner's spreadsheet (item 21) -------------------------------------------------------------
+// Preview only reads and matches (it may call the model, so it shares the generation limit); nothing is saved until
+// the owner confirms. The demo can preview and download, but never writes: its confirmed import stays in the browser.
+router.post('/:id/stock/preview', requireManager, generationLimit, reply(async (req) => {
+  const { file, sheet, mapping } = req.body;
+  if (typeof file !== 'string' || !file) throw Object.assign(new Error('Choose an Excel or CSV file first.'), { status: 400 });
+  if (file.length > Math.ceil(MAX_SHEET * 1.4)) throw Object.assign(new Error('The file must be 5 MB or smaller.'), { status: 400 });
+  return previewImport(req.params.id, { buffer: Buffer.from(file, 'base64'), sheet, mapping });
+}));
+router.post('/:id/stock/import', rejectDemoWrites, requireManager, reply((req) => applyImport(req.params.id, req.body)));
+router.put('/:id/catalog/:productId/stock', rejectDemoWrites, requireManager, reply((req) => setVariants(req.params.id, req.params.productId, req.body.variants ?? [])));
+router.get('/:id/stock/alerts', reply((req) => stockAlerts(req.params.id)));
+router.patch('/:id/settings', rejectDemoWrites, requireManager, reply((req) => setLowStockThreshold(req.params.id, req.body.low_stock_threshold)));
+router.get('/:id/stock/export', requireManager, async (req, res) => {
+  try {
+    const { buffer } = await exportStock(req.params.id);
+    res.set({ 'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'Content-Disposition': `attachment; filename="stock-${new Date().toISOString().slice(0, 10)}.xlsx"` }).send(buffer);
+  } catch (err) {
+    console.error(err.message);
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+// The demo keeps its stock in the visitor's browser, so it sends its rows and gets a workbook back (nothing is stored).
+router.post('/:id/stock/xlsx', async (req, res) => {
+  try {
+    if (req.params.id !== DEMO_PAGE_ID) return res.status(400).json({ error: 'Use the stock download for your page.' });
+    const lines = Array.isArray(req.body.lines) ? req.body.lines.slice(0, 5000).map((l) => ({ name: String(l.name ?? '').slice(0, 120), size: String(l.size ?? '').slice(0, 20), color: String(l.color ?? '').slice(0, 30), quantity: Number.isFinite(Number(l.quantity)) ? Number(l.quantity) : '', price: Number.isFinite(Number(l.price)) ? Number(l.price) : '', sku: String(l.sku ?? '').slice(0, 40) })) : [];
+    res.set({ 'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'Content-Disposition': 'attachment; filename="stock.xlsx"' }).send(excelBuffer(req.body.layout, lines));
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // Comments that need an answer, for Home.
 router.get('/:id/replies', async (req, res) => {

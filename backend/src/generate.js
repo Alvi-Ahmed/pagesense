@@ -2,6 +2,7 @@ import { db } from './db.js';
 import { clip, completeJSON } from './ai.js';
 import { INTENT_LABELS, latestPlaybook } from './playbook.js';
 import { getProduct as getCatalogProduct } from './catalog.js';
+import { lowStockThreshold } from './stock.js';
 import { MAX_TOOL_CALLS, runAgent } from './agent.js';
 import { randomUUID } from 'node:crypto';
 import { numbersIn, toAscii } from './textutil.js';
@@ -600,10 +601,13 @@ export async function generateNewProduct(pageId, { form, analysis, language, hin
 export async function generateFromCatalog(pageId, { productId, language, hint }) {
   const product = await getCatalogProduct(pageId, productId);
   if (product.status === 'sold_out') throw fail('This product is marked sold out. Restock it before writing a post about it.', 409);
+  // a "few left" post may say so only when the stock count is known and low
+  const low = product.stock != null && product.stock > 0 && product.stock <= await lowStockThreshold(pageId);
+  const availability = low ? `limited stock: only ${product.stock} left` : product.status === 'pre_order' ? 'pre-order (the caption may say so)' : null;
   const result = await generateNewProduct(pageId, {
     form: { name: product.name, price: product.price ?? '', sizes: product.sizes.join(', '), colors: product.colors.join(', '), stock: product.stock ?? '', offer: product.offer ?? '' },
     analysis: { product_type: product.type, product_phrase: product.phrase || product.name },
-    language, hint, priceOptional: true, availability: product.status === 'pre_order' ? 'pre-order (the caption may say so)' : null,
+    language, hint, priceOptional: true, availability,
   });
   const stored = product.photo_ref ?? null;
   return { ...result, product: { id: product.id, name: product.name, price: product.price, status: product.status }, photo_url: product.thumbnail_url, photo_store: stored, source_post_id: product.source_post_id ?? null };

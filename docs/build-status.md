@@ -159,6 +159,25 @@ Status: DONE / PARTIAL / MISSING. Update this file after each item.
     demo:analyze, demo:save-analysis.
 20. PARTIAL: Loading, empty and error states everywhere.
 
+21. DONE: Excel stock import (src/stock.js). Upload .xlsx or .csv (5 MB, parsed with SheetJS 0.20.3 installed from
+    cdn.sheetjs.com because the npm "xlsx" 0.18.5 has known vulnerabilities when reading crafted files), sheet picker,
+    title rows, blank rows, totals rows and merged cells handled. muse-spark-1.3 maps the header row and 5 sample rows
+    to name / size / color / quantity / price / SKU (Bangla, Banglish or English headers; a blank merged header is read
+    from the data) and the answer is checked against the data; the owner fixes the mapping with dropdowns. Products
+    are matched to the catalog by name (letter-pair similarity), by code, and, for close calls and Bangla names, by
+    muse-spark-open on Baseten choosing only among candidates shown to it; confident matches apply, "probably" ones
+    show their %, doubtful ones must be confirmed, unmatched rows can create new products. Nothing is saved until the
+    owner confirms. Stock per variant (product + size + color) in stock_variants (db/008_stock.sql); an import sets
+    quantities, never overwrites an owner's price, and fills the product's stock total. Confirming an order takes its
+    quantity from the matching variant (unknown quantity or ambiguous size: nothing is guessed, the owner is told),
+    undoing or cancelling puts back exactly what was taken (stock_moves). Stock 0 marks the product sold_out (item 8
+    suggestions are then available), stock coming back restocks it. Low stock (default 3, set per page) shows on Home
+    with a "few left" post that may say "limited stock" only because the count is known. Stock can be edited per
+    variant on the Catalog screen. "Download as Excel" returns current stock in the owner's own headers and column
+    order (saved from the last import). Demo: the sample file public/sample-stock.xlsx (Banglish headers); preview and
+    download run on the server but the confirmed import and every edit stay in the visitor's tab; Home stock alerts
+    and order-driven stock changes are real-page only.
+
 ## Build order for what's left
 4 → 5 + 15 → 14 → 9 + 16 → 6 + 18 → 8 → 7 + 17 → 10 → 11 → 20
 

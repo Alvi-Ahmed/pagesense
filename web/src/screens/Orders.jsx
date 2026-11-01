@@ -126,6 +126,7 @@ export function Orders() {
   const [tab, setTab] = useState('to_review')
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState(null)
+  const [info, setInfo] = useState(null) // what confirming or undoing did to stock
 
   useEffect(() => {
     let cancelled = false
@@ -144,7 +145,11 @@ export function Orders() {
   }
   const token = { accessToken: session.token }
   const act = {
-    status: (o, status) => run(async () => { if (demo) changeLocal(o.id, { status }); else await post(`/pages/${pageId}/orders/${o.id}/status`, { status, ...token }) }),
+    status: (o, status) => run(async () => {
+      setInfo(null)
+      if (demo) changeLocal(o.id, { status })
+      else setInfo((await post(`/pages/${pageId}/orders/${o.id}/status`, { status, ...token })).stock_note)
+    }),
     convert: (o) => run(async () => { if (demo) changeLocal(o.id, { kind: 'order' }); else await post(`/pages/${pageId}/orders/${o.id}/convert`, token) }),
     edit: (o, fields) => run(async () => {
       if (demo) {
@@ -199,6 +204,7 @@ export function Orders() {
         </button>
       )}
       {notice && <ErrorState message={notice} />}
+      {info && <p role="status" className="rounded-card bg-accent-soft px-4 py-3 text-sm font-semibold text-accent-dark">{info}</p>}
       {demo && <p className="text-xs text-muted">Demo mode: status changes and edits stay in this browser tab.</p>}
 
       {tab === 'confirmed' && counts.confirmed > 0 && (

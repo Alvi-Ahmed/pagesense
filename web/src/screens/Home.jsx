@@ -88,6 +88,40 @@ function Drafts({ session, analysis }) {
   )
 }
 
+// Products that sold out (stock 0) or are running low, with one tap to the next step.
+function StockAlerts({ pageId, analysis }) {
+  const [alerts, setAlerts] = useState(null)
+  useEffect(() => {
+    let cancelled = false
+    get(`/pages/${pageId}/stock/alerts`).then((a) => { if (!cancelled) setAlerts(a) }).catch(() => {})
+    return () => { cancelled = true }
+  }, [pageId, analysis?.finished_at])
+  if (!alerts?.ready || (!alerts.low.length && !alerts.sold_out.length)) return null
+  return (
+    <section className="flex flex-col gap-2.5" aria-label="Stock alerts">
+      <h2 className="text-[17px] font-bold">Stock</h2>
+      <ul className="flex flex-col gap-2">
+        {alerts.sold_out.map((p) => (
+          <li key={p.id}>
+            <Link to="/catalog" state={{ open: p.id }} className="flex items-center justify-between gap-3 rounded-card border border-warn bg-warn-soft p-3 text-ink no-underline">
+              <span className="text-sm"><strong>{p.name}</strong> is sold out. Update the posts that still sell it.</span>
+              <span className="shrink-0 text-sm font-bold text-warn">Open →</span>
+            </Link>
+          </li>
+        ))}
+        {alerts.low.map((p) => (
+          <li key={p.id}>
+            <Link to="/create" state={{ productId: p.id, hint: `Only ${p.stock} left: tell customers it is almost gone` }} className="flex items-center justify-between gap-3 rounded-card border border-amber-line bg-amber-soft p-3 text-ink no-underline">
+              <span className="text-sm"><strong>Only {p.stock} left</strong> of {p.name}. Write a “few left” post.</span>
+              <span className="shrink-0 text-sm font-bold text-amber-ink">Write →</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
 function Replies({ pageId, ready, total, intent, onClear }) {
   const [replies, setReplies] = useState(null)
   const [limit, setLimit] = useState(8)
@@ -170,6 +204,8 @@ export function Home() {
         <Tile onClick={() => filterTo('price_question')} active={intent === 'price_question'} value={n(summary.intents.price_question)} label="price questions waiting" color="text-info" />
         <Tile onClick={() => filterTo('complaint')} active={intent === 'complaint'} value={n(summary.intents.complaint)} label="complaints to handle" color="text-warn" />
       </section>
+
+      {!session.demo && <StockAlerts pageId={session.page.id} analysis={analysis} />}
 
       <Drafts session={session} analysis={analysis} />
 

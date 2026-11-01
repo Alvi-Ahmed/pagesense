@@ -13,6 +13,7 @@
     "demo:seed": "node scripts/demo-seed.js",
     "test:compare": "node tests/05-compare-classification.js",
     "demo:analyze": "node scripts/demo-analyze.js",
+    "demo:sample-stock": "node scripts/make-sample-stock.js",
     "demo:scan": "node scripts/demo-scan-snapshot.js",
     "demo:save-analysis": "node scripts/demo-save-analysis.js"
   },
@@ -22,7 +23,8 @@
     "dotenv": "^16.4.5",
     "express": "^4.21.2",
     "openai": "^4.77.0",
-    "sharp": "^0.35.5"
+    "sharp": "^0.35.5",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "engines": {
     "node": ">=22"

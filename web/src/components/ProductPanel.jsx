@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { get, patch, post } from '../api'
+import { get, patch, post, request } from '../api'
+import { localVariants, setLocalVariants } from '../stockLocal'
 import { editLocal, localEdits, localUpdates, mergeLocal, storeLocalUpdates } from '../catalogLocal'
 import { ErrorState, Skeleton } from './ui'
 import { StatusChip } from './StatusChip'
@@ -50,6 +51,8 @@ export function ProductPanel({ session, summary, others, onClose, onChanged }) {
   const [mergeId, setMergeId] = useState('')
   const [updates, setUpdates] = useState({ sold_out: null, restock: null })
   const [caps, setCaps] = useState({ offer: false, stock: false })
+  const [variants, setVariants] = useState([]) // stock per size and color
+  const [stockNote, setStockNote] = useState(null)
   const [wasSoldOut, setWasSoldOut] = useState(false) // restocked in this session: offer the back-in-stock updates
 
   const view = detail && { ...detail, ...(demo ? localEdits(detail.id) : {}) }
@@ -57,11 +60,14 @@ export function ProductPanel({ session, summary, others, onClose, onChanged }) {
 
   useEffect(() => {
     let cancelled = false
-    get(`/pages/${pageId}/catalog/${summary.id}`)
+    const local = summary.id.startsWith('local-') // a product made by a demo import exists only in this tab
+    ;(local ? Promise.resolve({ ...summary, linked_posts: [], variants: [] }) : get(`/pages/${pageId}/catalog/${summary.id}`))
       .then(async (d) => {
         if (cancelled) return
         const merged = demo ? { ...d, ...localEdits(d.id) } : d
         setDetail(d); startForm(merged)
+        setVariants(demo ? (localVariants(d.id) ?? []) : (d.variants ?? []))
+        if (local) return
         const list = await get(`/pages/${pageId}/catalog`)
         if (!cancelled) setCaps(list.capabilities ?? caps)
         const saved = {}
@@ -121,6 +127,19 @@ export function ProductPanel({ session, summary, others, onClose, onChanged }) {
     setDetail((d) => ({ ...d, _more: { ...d._more, [kind]: r.more_posts } }))
   }
 
+  const editVariant = (i, key, value) => setVariants((rows) => rows.map((r, j) => (j === i ? { ...r, [key]: value } : r)))
+  const saveStock = () => guarded('stock', async () => {
+    const rows = variants.map((v) => ({ size: String(v.size ?? '').trim(), color: String(v.color ?? '').trim(), quantity: Number(v.quantity) }))
+    if (rows.some((r) => !Number.isInteger(r.quantity) || r.quantity < 0)) throw new Error('Every quantity must be a whole number, 0 or more.')
+    if (demo) { setLocalVariants(detail.id, rows); setStockNote('Saved in this tab (demo mode).') }
+    else {
+      const change = await request(`/pages/${pageId}/catalog/${detail.id}/stock`, { variants: rows, ...token }, 'PUT')
+      setDetail(await get(`/pages/${pageId}/catalog/${detail.id}`)) // the status may have followed the stock
+      setStockNote(change.became === 'sold_out' ? 'Stock is 0, so the product is now marked sold out.' : change.became === 'restocked' ? 'Back in stock.' : 'Stock saved.')
+    }
+    onChanged()
+  })
+
   const merge = () => guarded('merge', async () => {
     if (!mergeId) return
     if (demo) mergeLocal(detail.id, mergeId)
@@ -165,6 +184,23 @@ export function ProductPanel({ session, summary, others, onClose, onChanged }) {
           {busy === 'save' ? 'Saving…' : 'Save details'}
         </button>
         {demo && <p className="text-xs text-muted">Demo mode: changes stay in this browser tab.</p>}
+      </section>
+
+      <section className="flex flex-col gap-3 rounded-card border border-line bg-white p-4" aria-label="Stock">
+        <h2 className="text-[15px] font-bold">Stock{variants.length > 0 && <span className="ml-2 text-sm font-semibold text-muted">{variants.reduce((n, v) => n + (Number(v.quantity) || 0), 0)} in total</span>}</h2>
+        {variants.length === 0 && <p className="text-sm text-muted">Stock is not tracked for this product yet. Import your sheet, or add a line here.</p>}
+        {variants.map((v, i) => (
+          <div key={i} className="grid grid-cols-[1fr_1fr_5rem] gap-2">
+            <input value={v.size} onChange={(e) => editVariant(i, 'size', e.target.value)} placeholder="Size" aria-label="Size" className={input} />
+            <input value={v.color} onChange={(e) => editVariant(i, 'color', e.target.value)} placeholder="Color" aria-label="Color" className={input} />
+            <input value={v.quantity} onChange={(e) => editVariant(i, 'quantity', e.target.value)} inputMode="numeric" aria-label="Quantity" className={`${input} text-center`} />
+          </div>
+        ))}
+        <div className="grid grid-cols-2 gap-2">
+          <button onClick={() => setVariants((r) => [...r, { size: '', color: '', quantity: 0 }])} className="min-h-11 rounded-btn border border-line bg-white px-3 text-sm font-bold">Add a line</button>
+          <button onClick={saveStock} disabled={busy !== null} className="min-h-11 rounded-btn bg-accent px-3 text-sm font-bold text-white disabled:opacity-50">{busy === 'stock' ? 'Saving…' : 'Save stock'}</button>
+        </div>
+        {stockNote && <p role="status" className="text-xs font-semibold text-accent-dark">{stockNote}</p>}
       </section>
 
       <section className="flex flex-col gap-2.5">

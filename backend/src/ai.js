@@ -12,6 +12,8 @@ export const TASKS = {
   catalog_extraction: { provider: process.env.PROVIDER_CATALOG_EXTRACTION || BULK, lowEffort: true },
   order_extraction: { provider: process.env.PROVIDER_ORDER_EXTRACTION || BULK, lowEffort: true },
   order_reply: { provider: process.env.PROVIDER_ORDER_REPLY || 'meta', lowEffort: true },
+  stock_mapping: { provider: process.env.PROVIDER_STOCK_MAPPING || 'meta', lowEffort: true },
+  stock_matching: { provider: process.env.PROVIDER_STOCK_MATCHING || BULK, lowEffort: true },
   name_scan: { provider: process.env.PROVIDER_NAME_SCAN || BULK, lowEffort: true },
   post_generation: { provider: process.env.PROVIDER_POST_GENERATION || 'meta', lowEffort: false },
 };

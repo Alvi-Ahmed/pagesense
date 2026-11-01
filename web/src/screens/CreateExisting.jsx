@@ -57,7 +57,7 @@ export function CreateExisting({ session, from, hint }) {
       .then(({ list, catalog }) => {
         if (cancelled) return
         setFromCatalog(catalog); setProducts(list)
-        if (list.length) setProductKey((k) => k ?? list[0].key)
+        if (list.length) setProductKey((k) => k ?? (list.some((p) => p.key === from.productId) ? from.productId : list[0].key))
       })
       .catch((e) => { if (!cancelled) setError(e.message) })
     if (from.improvePostId) {

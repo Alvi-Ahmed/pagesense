@@ -9,7 +9,7 @@ import { CreateNew } from './CreateNew'
 export function Create() {
   const { session } = useOutletContext()
   const from = useLocation().state || {} // set by Home ("Create this post"), the Playbook ("Improve this post") and drafts
-  const [mode, setMode] = useState(from.improvePostId || from.draftId ? 'existing' : 'new')
+  const [mode, setMode] = useState(from.improvePostId || from.draftId || from.productId ? 'existing' : 'new')
   const [hint, setHint] = useState(from.hint || null)
   const improving = mode === 'existing' && !!from.improvePostId
 
