@@ -184,3 +184,8 @@ Status: DONE / PARTIAL / MISSING. Update this file after each item.
 Known: the hackathon Baseten key only works with the model id meta-models/muse-spark-open-1026 (the plain
 muse-spark-open id returns 403); the default is set to it. Demo post photos are Facebook image links and some show the real shop's name, phone number and website
 printed in the image itself. demo:scan checks text only.
+
+Login: Facebook's own login token lasts about an hour, so after the owner proves they manage a page the backend issues
+its own signed page session (src/session.js: HMAC with a key derived from FB_APP_SECRET, one page, 24 hours, checked
+without calling Facebook). The app sends that instead. When a login does expire (our session, or Facebook error 190 on an
+older tab) the API answers 401 code session_expired and the app returns to the login screen with an explanation.

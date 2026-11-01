@@ -16,6 +16,12 @@ export async function graph(path, params = {}) {
     }
     const err = new Error(body.error?.message || `Graph API ${res.status}`);
     err.status = 400;
+    err.fb = body.error;
+    if (body.error?.code === 190) { // the user's login token is expired or no longer valid
+      err.status = 401;
+      err.code = 'session_expired';
+      err.message = 'Your Facebook login has expired. Please log in again.';
+    }
     throw err;
   }
 }

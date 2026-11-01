@@ -35,8 +35,8 @@ function Connect({ onConnected }) {
   })
 
   const confirm = () => run(async () => {
-    const { page } = await post('/auth/select-page', { accessToken: token, pageId: picked.id })
-    onConnected({ page, token, days })
+    const { page, session } = await post('/auth/select-page', { accessToken: token, pageId: picked.id })
+    onConnected({ page, token: session ?? token, days }) // our own session token outlives Facebook's short login token
   })
 
   return (
@@ -78,7 +78,7 @@ function Connect({ onConnected }) {
   )
 }
 
-export function Landing({ onConnected }) {
+export function Landing({ onConnected, notice }) {
   const [status, setStatus] = useState({ state: 'loading' })
 
   useEffect(() => {
@@ -101,6 +101,7 @@ export function Landing({ onConnected }) {
         builds your catalog, and writes posts in your voice, in Bangla, English
         or Banglish.
       </p>
+      {notice && <p role="alert" className="rounded-card bg-amber-soft px-4 py-3 text-sm font-semibold text-amber-ink">{notice}</p>}
       <Connect onConnected={onConnected} />
       <button onClick={() => onConnected(DEMO_SESSION)} className="min-h-11 self-start text-sm text-muted underline">
         Try the demo without logging in

@@ -16,6 +16,7 @@ import { convertToOrder, exportConfirmed, listOrders, setOrderStatus, suggestRep
 import { MAX_BYTES as MAX_SHEET, applyImport, excelBuffer, exportStock, getVariants, previewImport, setLowStockThreshold, setVariants, stockAlerts } from '../stock.js';
 import { cleanPhoto, refFor, showableUrl, storePhoto, MAX_BYTES } from '../photos.js';
 import { rateLimit } from '../rateLimit.js';
+import { isSessionToken, verifySession } from '../session.js';
 
 const router = Router();
 
@@ -26,13 +27,17 @@ const requireManager = async (req, res, next) => {
   try {
     const accessToken = req.body?.accessToken || req.get('x-access-token'); // uploads are raw images, so the token comes in a header
     if (!accessToken) return res.status(400).json({ error: 'accessToken is required' });
-    const pages = await listUserPages(accessToken);
+    if (isSessionToken(accessToken)) { // our own signed page session: checked here, no call to Facebook
+      if (verifySession(accessToken) !== req.params.id) return res.status(403).json({ error: 'You do not manage that page' });
+      return next();
+    }
+    const pages = await listUserPages(accessToken); // a Facebook login token, as older sessions still send
     if (!pages.some((p) => p.id === req.params.id)) {
       return res.status(403).json({ error: 'You do not manage that page' });
     }
     next();
   } catch (err) {
-    res.status(err.status || 500).json({ error: err.message });
+    res.status(err.status || 500).json({ error: err.message, ...(err.code && { code: err.code }) });
   }
 };
 

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { Shell } from './components/Shell'
 import { Landing } from './screens/Landing'
@@ -11,9 +11,17 @@ import { loadSession, saveSession } from './session'
 
 export default function App() {
   const [session, setSession] = useState(loadSession)
-  const update = (s) => { saveSession(s); setSession(s) }
+  const [expired, setExpired] = useState(false)
+  const update = (s) => { saveSession(s); setSession(s); setExpired(false) }
 
-  if (!session) return <Landing onConnected={update} />
+  // a request came back saying the login ran out: forget it and ask the owner to log in again
+  useEffect(() => {
+    const onExpired = () => { saveSession(null); setSession(null); setExpired(true) }
+    window.addEventListener('pagesense:session-expired', onExpired)
+    return () => window.removeEventListener('pagesense:session-expired', onExpired)
+  }, [])
+
+  if (!session) return <Landing onConnected={update} notice={expired ? 'Your Facebook login expired. Log in again to carry on: your page and everything we learned are saved.' : null} />
 
   return (
     <BrowserRouter>

@@ -8,7 +8,11 @@ export async function request(path, body, method = 'POST', headers = {}) {
   const data = await res.json().catch(() => {
     throw new Error(`Backend returned a non-JSON response (HTTP ${res.status}) from ${res.url}`)
   })
-  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`)
+  if (!res.ok) {
+    // the login ran out: the app listens for this and takes the owner back to the login screen
+    if (res.status === 401 && data.code === 'session_expired') window.dispatchEvent(new Event('pagesense:session-expired'))
+    throw new Error(data.error || `HTTP ${res.status}`)
+  }
   return data
 }
 export const get = (path) => request(path)

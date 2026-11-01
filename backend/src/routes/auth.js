@@ -1,13 +1,14 @@
 import { Router } from 'express';
 import { db } from '../db.js';
 import { exchangeLongLivedToken, listUserPages } from '../facebook.js';
+import { signSession } from '../session.js';
 
 const router = Router();
 
 const wrap = (fn) => (req, res) =>
   fn(req, res).catch((err) => {
     console.error(err.message);
-    res.status(err.status || 500).json({ error: err.message });
+    res.status(err.status || 500).json({ error: err.message, ...(err.code && { code: err.code }) });
   });
 
 // Step 1: user token in, list of pages out. Nothing stored, no page tokens returned.
@@ -36,7 +37,8 @@ router.post('/select-page', wrap(async (req, res) => {
     updated_at: new Date().toISOString(),
   });
   if (error) throw error;
-  res.json({ page: { id: page.id, name: page.name } });
+  // `session` is what the app sends from now on: it outlives Facebook's short login token
+  res.json({ page: { id: page.id, name: page.name }, session: signSession(page.id) });
 }));
 
 export default router;
