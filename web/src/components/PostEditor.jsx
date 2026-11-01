@@ -48,7 +48,7 @@ function Preview({ template, values }) {
 
 // Caption box with placeholder fields, a live preview, the reasons, and the copy / regenerate / coming-soon buttons.
 // Remount it (key) for every new result: it keeps the owner's edits and filled-in values while the result stays the same.
-export function PostEditor({ result, photo, onCaption, onSaveEdit, onRegenerate, note, saveSlot }) {
+export function PostEditor({ result, photo, photoSlot, onCaption, onSaveEdit, onRegenerate, note, saveSlot }) {
   const [template, setTemplate] = useState(result.caption)
   const [values, setValues] = useState({})
   const [copied, setCopied] = useState(false)
@@ -63,7 +63,7 @@ export function PostEditor({ result, photo, onCaption, onSaveEdit, onRegenerate,
 
   return (
     <>
-      {photo && <img src={photo} alt="Photo for this post" className="aspect-square w-full rounded-card bg-track object-cover" />}
+      {photoSlot ?? (photo && <img src={photo} alt="Photo for this post" className="aspect-square w-full rounded-card bg-track object-cover" />)}
 
       <Card title="Your caption">
         <textarea value={template} onChange={(e) => edit(e.target.value)} onBlur={() => onSaveEdit?.(template)}

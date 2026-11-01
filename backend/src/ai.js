@@ -14,6 +14,8 @@ export const TASKS = {
   order_reply: { provider: process.env.PROVIDER_ORDER_REPLY || 'meta', lowEffort: true },
   stock_mapping: { provider: process.env.PROVIDER_STOCK_MAPPING || 'meta', lowEffort: true },
   stock_matching: { provider: process.env.PROVIDER_STOCK_MATCHING || BULK, lowEffort: true },
+  logo_check: { provider: process.env.PROVIDER_LOGO_CHECK || BULK, lowEffort: true },
+  branding_phrase: { provider: process.env.PROVIDER_BRANDING_PHRASE || BULK, lowEffort: true },
   name_scan: { provider: process.env.PROVIDER_NAME_SCAN || BULK, lowEffort: true },
   post_generation: { provider: process.env.PROVIDER_POST_GENERATION || 'meta', lowEffort: false },
 };

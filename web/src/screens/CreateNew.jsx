@@ -3,6 +3,7 @@ import { API_URL, post } from '../api'
 import { saveDemoDraft } from '../drafts'
 import { MAX_PHOTO_MB, MAX_PHOTOS, blobToDataUrl, shrink } from '../photoTools'
 import { Card, LanguageToggle, PostEditor } from '../components/PostEditor'
+import { BrandedPhoto } from '../components/BrandedPhoto'
 import { ErrorState, Skeleton } from '../components/ui'
 
 const ISSUE = {
@@ -121,7 +122,7 @@ export function CreateNew({ session }) {
           accessToken: session.token, form, analysis, upload_ids: ready.map((p) => p.uploadId),
           draft: { caption, language: result.language, why: result.why, patterns_used: result.patterns_used, placeholders: result.placeholders },
         })
-        setSaved({ product: r.product })
+        setSaved({ product: r.product, draftId: r.draft?.id })
       }
     } catch (e) { setError(e.message) }
     setBusy(null)
@@ -241,7 +242,12 @@ export function CreateNew({ session }) {
       {error && <ErrorState message={error} onRetry={analysis ? undefined : ready.length ? analyse : undefined} />}
 
       {result && busy !== 'generating' && (
-        <PostEditor key={resultKey} result={result} photo={photos[0]?.previewUrl} onCaption={setCaption} onRegenerate={() => generate()}
+        <PostEditor key={resultKey} result={result} photo={photos[0]?.previewUrl}
+          photoSlot={ready[0] && (
+            <BrandedPhoto session={session} source={session.demo ? { data: ready[0].data } : { upload_id: ready[0].uploadId }}
+              hint={analysis?.product_phrase} price={priceOk ? form.price : null} offer={form.offer.trim() || null} draftId={saved?.draftId} />
+          )}
+          onCaption={setCaption} onRegenerate={() => generate()}
           saveSlot={saved ? (
             <p role="status" className="rounded-card bg-accent-soft px-4 py-3 text-sm font-semibold text-accent-dark">
               {saved.demo ? 'Saved in this browser tab (demo mode). Find it under Your drafts on Home.' : 'Saved. The product is in your catalog and the draft is on Home.'}

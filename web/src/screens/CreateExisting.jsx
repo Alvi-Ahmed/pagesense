@@ -3,6 +3,7 @@ import { get, patch, post } from '../api'
 import { applyLocal } from '../catalogLocal'
 import { fromDraft, loadDrafts, saveDemoDraft, updateDemoDraft } from '../drafts'
 import { Card, LanguageToggle, PostEditor } from '../components/PostEditor'
+import { BrandedPhoto } from '../components/BrandedPhoto'
 import { ErrorState, Skeleton } from '../components/ui'
 
 // "Post about a product I already sell": pick a product found in the page's photo tags (or describe one),
@@ -155,6 +156,10 @@ export function CreateExisting({ session, from, hint }) {
 
       {result && !pending && (
         <PostEditor key={resultKey} result={result} photo={photo} onSaveEdit={saveEdit}
+          photoSlot={!session.demo && result.source_post_id && (
+            <BrandedPhoto session={session} source={{ post_id: result.source_post_id }} hint={product?.label}
+              price={product?.price ?? null} draftId={result.draft_id} />
+          )}
           onRegenerate={() => (improving ? improve(language) : generate())}
           note={session.demo ? 'Demo mode: your drafts stay in this browser tab only.' : 'Saved as a draft on your page.'} />
       )}

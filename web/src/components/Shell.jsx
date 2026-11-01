@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { Banner } from './Banner'
 import { CatalogIcon, CheckIcon, CreateIcon, HomeIcon, MoreIcon, OrdersIcon, PlaybookIcon } from './Icons'
 import { usePageStatus } from '../usePageStatus'
+import { BrandPanel } from './BrandPanel'
 
 const TABS = [
   { to: '/', label: 'Home', Icon: HomeIcon, end: true },
@@ -20,6 +21,12 @@ const greeting = () => {
 export function Shell({ session, onDisconnect }) {
   const status = usePageStatus(session)
   const [menu, setMenu] = useState(false)
+  const [brandOpen, setBrandOpen] = useState(false)
+  useEffect(() => { // a screen can ask for the brand panel ("Add your logo")
+    const open = () => setBrandOpen(true)
+    window.addEventListener('pagesense:open-brand', open)
+    return () => window.removeEventListener('pagesense:open-brand', open)
+  }, [])
   const syncing = status.sync?.status === 'running'
   const busy = syncing || ['queued', 'running'].includes(status.analysis?.status)
   const posts = syncing ? status.sync.posts : status.summary?.posts
@@ -51,6 +58,7 @@ export function Shell({ session, onDisconnect }) {
         </div>
         {menu && (
           <div className="absolute top-[72px] right-5 z-20 rounded-card border border-line bg-white p-1 shadow-lg">
+            <button onClick={() => { setMenu(false); setBrandOpen(true) }} className="min-h-11 w-full rounded-btn px-4 text-left text-sm font-semibold">Brand settings</button>
             {!session.demo && (
               <button
                 disabled={busy}
@@ -68,6 +76,8 @@ export function Shell({ session, onDisconnect }) {
           </div>
         )}
       </header>
+
+      {brandOpen && <BrandPanel session={session} onClose={() => setBrandOpen(false)} />}
 
       <main className="flex flex-1 flex-col gap-5 px-5 pt-5 pb-28">
         <Outlet context={{ session, ...status }} />

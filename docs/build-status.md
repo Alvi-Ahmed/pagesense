@@ -118,8 +118,27 @@ Status: DONE / PARTIAL / MISSING. Update this file after each item.
    Demo: photos go to the server only as base64 to be analysed, are never stored, drafts stay in the tab.
    db/005_new_products.sql adds stock, offer, photo_paths, analysis to products and product_id to post_drafts;
    until it is run, those details are kept in the draft's `why` json.
-10. MISSING: Branding: product phrase from muse-spark → SAM 3.1 box (fallback "person", then
-    "product") → logo and price badge composited with sharp; product pixels never altered.
+10. DONE: Photo branding. Brand settings (header menu): shop name, brand color, logo upload (PNG, or SVG which is
+    checked then rasterised; a logo on a white box gets the white keyed out) or "Generate a logo" (muse-image-1.0,
+    wordmark or icon + name, 3 options, each read back by Muse Spark to confirm the spelling). Stored in the
+    `brand-assets` bucket (created on demand), brand details in pages.brand (db/009_brand.sql, also adds
+    post_drafts.branded_url / branding).
+    Engine (backend/src/branding.js): Muse Spark gives the product phrase (+ worn or flat) → SAM 3.1 boxes
+    (/v1/responses; phrase → "person" → "product"; worn photos add "person"; cached per photo) → in code, boxes
+    inflated 2.5%, 3% safe margin, candidate regions = largest empty rectangle at each of 4 corners + top/bottom
+    bands → logo 12–15% of width, light/dark/original version by background contrast → sharp composite, price badge
+    (price + offer, text drawn as paths from bundled Inter Bold, no server fonts) in the next free region. No room →
+    8% logo in the quietest corner and a note to the user. Square 1080×1080 / portrait 1080×1350, padded with a
+    blurred copy of the photo (never cropped). Product pixels are only resized, never redrawn.
+    API: GET/PUT /pages/:id/brand, POST brand/logo/{process,generate,save}, POST branding/{detect,render},
+    POST drafts/:draftId/branded (stores the image, links it to the draft; drafts list returns branded_url).
+    Create screens: branded preview with Logo on/off, Price badge on/off, Square/Portrait, Move logo, Download image,
+    "Keep with this draft"; no logo yet shows a prompt to open Brand settings.
+    Demo: brand and result stay in the tab (sessionStorage), nothing is written, generation calls are rate limited
+    (20/hour) and renders 400/hour. Demo can brand an uploaded photo (New product), not existing page posts.
+    Known limits: when the product fills a square frame the logo drops to the small fallback with a note (portrait
+    has padding room); busy collages leave no room for the badge; SAM boxes vary a little between runs; the
+    panel/preview UI was checked by lint + build, the API flows against a real page and the demo endpoints.
 11. MISSING: Publishing approved posts through the Graph API.
 12. PARTIAL: API endpoints for all of the above (done through item 9).
 
@@ -138,7 +157,7 @@ Status: DONE / PARTIAL / MISSING. Update this file after each item.
     editable caption, placeholders highlighted with inline fields to fill them, why-this-works chips, Regenerate,
     Copy caption, Schedule / Post to page disabled with a coming-soon note (item 11). "Improve this post" on the
     Playbook's weakest recent posts; collapsible "How this post was made" shows the agent's steps; Home's "Create this post" prefills the playbook suggestion; drafts on Home.
-    Built from the written spec: docs/design/create.png is not in the repo. Branded photo comes with item 10.
+    Built from the written spec: docs/design/create.png is not in the repo. The branded photo preview is item 10.
 17. DONE: Orders screen: tabs To review / Confirmed / Delivered with counts (Cancelled shown when there are any); order
     cards with product, size, quantity, color, phone, address, the original comment and the customer's replies, the
     missing-details warning, Open comment, Ask for details (suggested reply with Copy), Edit, Confirm / Undo, Mark

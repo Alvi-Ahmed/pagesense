@@ -8,6 +8,7 @@ import { randomUUID } from 'node:crypto';
 import { numbersIn, toAscii } from './textutil.js';
 import { findPersonalNames } from './names.js';
 import { showableUrl } from './photos.js';
+import { signedUrl } from './brand.js';
 
 export const LANGUAGES = ['bangla', 'english', 'banglish'];
 // Facts we may not know. The model must write these exactly instead of inventing a value.
@@ -681,7 +682,7 @@ export async function listDrafts(pageId) {
   const { data, error } = await db.from('post_drafts').select('*').eq('page_id', pageId)
     .eq('status', 'draft').order('created_at', { ascending: false }).limit(20);
   if (error) throw error;
-  return Promise.all(data.map(async (d) => ({ ...d, photo_url: await showableUrl(d.photo_url) })));
+  return Promise.all(data.map(async (d) => ({ ...d, photo_url: await showableUrl(d.photo_url), branded_url: await signedUrl(d.branded_url) })));
 }
 
 export async function updateDraft(pageId, draftId, caption) {
