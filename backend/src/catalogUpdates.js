@@ -118,7 +118,7 @@ export async function suggestUpdates(pageId, productId, { kind = 'sold_out', pos
     })));
   }
   if (save && await tableReady()) {
-    const rows = out.filter((s) => s.caption).map((s) => ({ page_id: pageId, product_id: productId, post_id: s.post_id, kind, original_caption: s.original_caption, caption: s.caption, similar: s.similar }));
+    const rows = out.filter((s) => s.caption).map((s) => ({ page_id: pageId, product_id: productId, post_id: s.post_id, kind, original_caption: s.original_caption, caption: s.caption, similar_product: s.similar }));
     if (rows.length) { const { error } = await db.from('caption_updates').insert(rows); if (error) console.error('could not save caption updates:', error.message); }
   }
   return { kind, product: { id: product.id, name: product.name, status: product.status }, similar: similarView, suggestions: out, more_posts: Math.max(product.linked_posts.length - targets.length, 0), total_posts: product.linked_posts.length };
@@ -136,5 +136,5 @@ export async function savedUpdates(pageId, productId, kind) {
     const { data: posts } = await db.from('posts').select('id, photo_url').in('id', latest.map((r) => r.post_id));
     for (const p of posts ?? []) photos.set(p.id, await showableUrl(p.photo_url));
   }
-  return { suggestions: latest.map((r) => ({ post_id: r.post_id, photo_url: photos.get(r.post_id) ?? null, original_caption: r.original_caption, caption: r.caption, similar: r.similar, created_at: r.created_at })) };
+  return { suggestions: latest.map((r) => ({ post_id: r.post_id, photo_url: photos.get(r.post_id) ?? null, original_caption: r.original_caption, caption: r.caption, similar: r.similar_product, created_at: r.created_at })) };
 }

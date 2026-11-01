@@ -30,7 +30,7 @@ create table if not exists caption_updates (
   kind             text not null check (kind in ('sold_out', 'restock')),
   original_caption text,
   caption          text not null,
-  similar          jsonb,            -- the in-stock product the caption points to, if any
+  similar_product  jsonb,            -- the in-stock product the caption points to, if any
   created_at       timestamptz not null default now()
 );
 create index if not exists caption_updates_product_idx on caption_updates (product_id, kind, created_at desc);
