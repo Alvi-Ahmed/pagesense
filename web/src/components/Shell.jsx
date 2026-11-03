@@ -38,9 +38,7 @@ export function Shell({ session, onDisconnect }) {
 
       <header className="relative flex items-center justify-between gap-3 px-5 pt-6">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-accent text-lg font-bold text-white">
-            {session.page.name?.[0]?.toUpperCase() ?? 'S'}
-          </div>
+          <img src="/logo.png" alt="PageSense" className="size-11 shrink-0 object-contain" />
           <div className="flex flex-col gap-0.5">
             <span className="text-[13px] text-muted">{session.demo ? 'Demo mode' : greeting()}</span>
             <span className="text-[17px] font-bold">{session.page.name}</span>

@@ -87,33 +87,30 @@ export function Landing({ onConnected, notice }) {
       .catch((err) => setStatus({ state: 'error', message: err.message }))
   }, [])
 
-  const badge = {
-    loading: 'bg-track text-muted',
-    ok: 'bg-accent-soft text-accent-dark',
-    error: 'bg-warn-soft text-warn',
-  }[status.state]
+  const dot = { loading: 'bg-muted', ok: 'bg-accent', error: 'bg-warn' }[status.state]
 
   return (
-    <main className="mx-auto flex min-h-svh max-w-[430px] flex-col justify-center gap-6 bg-bg px-5 py-10">
-      <div className="flex items-center gap-3">
-        <img src="/logo.png" alt="" className="size-14" />
-        <h1 className="text-4xl font-bold tracking-tight">PageSense</h1>
+    <main className="mx-auto flex min-h-svh max-w-[430px] flex-col bg-bg px-6 pt-10 pb-6">
+      <div className="flex flex-1 flex-col items-center justify-center gap-5 text-center">
+        <h1 className="w-full max-w-[340px]"><img src="/logo-full.png" alt="PageSense" className="w-full mix-blend-multiply" /></h1>
+        <p className="max-w-[320px] text-[17px] leading-relaxed text-muted">
+          Your AI marketing analyst. Learns what sells on your Facebook page and writes posts in your voice, in Bangla, English or Banglish.
+        </p>
       </div>
-      <p className="text-lg text-muted">
-        An AI marketing analyst for Facebook page sellers. Learns what sells,
-        builds your catalog, and writes posts in your voice, in Bangla, English
-        or Banglish.
-      </p>
-      {notice && <p role="alert" className="rounded-card bg-amber-soft px-4 py-3 text-sm font-semibold text-amber-ink">{notice}</p>}
-      <Connect onConnected={onConnected} />
-      <button onClick={() => onConnected(DEMO_SESSION)} className="min-h-11 self-start text-sm text-muted underline">
-        Try the demo without logging in
-      </button>
-      <div className={`rounded-card px-4 py-3 text-sm ${badge}`}>
+      <div className="flex flex-col gap-3 pt-8">
+        {notice && <p role="alert" className="rounded-card bg-amber-soft px-4 py-3 text-sm font-semibold text-amber-ink">{notice}</p>}
+        <Connect onConnected={onConnected} />
+        <button onClick={() => onConnected(DEMO_SESSION)}
+          className="min-h-12 rounded-btn border border-line bg-white px-4 font-bold text-ink">
+          Try the demo without logging in
+        </button>
+      </div>
+      <p className="flex items-center justify-center gap-2 pt-6 text-xs text-muted">
+        <span className={`size-2 rounded-full ${dot}`} aria-hidden="true" />
         {status.state === 'loading' && 'Checking backend…'}
-        {status.state === 'ok' && `Backend online (${status.data.service})`}
+        {status.state === 'ok' && 'Backend online'}
         {status.state === 'error' && `Backend unreachable: ${status.message}`}
-      </div>
+      </p>
     </main>
   )
 }
