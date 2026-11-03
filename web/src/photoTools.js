@@ -1,7 +1,7 @@
 // Photos are shrunk in the browser before they leave the phone: less data to send, and redrawing on a canvas
 // also drops EXIF and location. The server strips metadata again, so this is a courtesy, not the safeguard.
 export const MAX_PHOTO_MB = 10
-export const MAX_PHOTOS = 5
+export const MAX_PHOTOS = 10
 
 async function decode(file) {
   try { return await createImageBitmap(file, { imageOrientation: 'from-image' }) } catch { /* older browsers */ }

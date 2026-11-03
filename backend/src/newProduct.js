@@ -5,7 +5,7 @@ import { cleanPhoto, loadStored, refFor, toDataUrl } from './photos.js';
 import { parseProductForm } from './generate.js';
 import { hasColumns } from './schema.js';
 
-const MAX_PHOTOS = 5;
+const MAX_PHOTOS = 10;
 const MIN_SIDE_PX = 700; // below this the photo is too small to look good on a phone
 const MAX_LIFT = 10; // same sanity limit as the playbook's headline
 const TIP_MIN_POSTS = 10; // a pattern needs this many posts behind both sides to become a tip
@@ -154,8 +154,10 @@ export function photoTips(playbookData, photos) {
     const yours = mine.reduce((a, b) => (b.median_engagement > a.median_engagement ? b : a));
     const better = trusted.reduce((a, b) => (b.median_engagement > a.median_engagement ? b : a));
     if (better.value === yours.value || !yours.median_engagement || better.median_engagement / yours.median_engagement < TIP_MIN_GAP) continue;
+    // the images the tip is about (1-based, in the order sent); the screen words "Image 3 is flat" from their current order
+    const images = photos.map((p, i) => (cfg.photoValue(p) === yours.value ? i + 1 : null)).filter(Boolean);
     tips.push({
-      dimension: key, label: cfg.label, gap: better.median_engagement / yours.median_engagement,
+      dimension: key, label: cfg.label, gap: better.median_engagement / yours.median_engagement, images,
       text: `Your ${yours.value} photos get a median of ${yours.median_engagement} engagement (${yours.posts} posts); ${better.value} photos get ${better.median_engagement} (${better.posts} posts). ${cfg.advice(better.value)}`,
       yours: { value: yours.value, posts: yours.posts, median_engagement: yours.median_engagement },
       better: { value: better.value, posts: better.posts, median_engagement: better.median_engagement },
@@ -187,10 +189,12 @@ export async function saveNewProduct(pageId, { form, analysis, upload_ids: uploa
   if (error) throw error;
 
   const linked = await hasColumns('post_drafts', ['product_id']);
-  const { id, caption: _c, language, why, patterns_used, placeholders, angle, pattern, variants } = { ...draft, caption }; // eslint-disable-line no-unused-vars
+  const { id, caption: _c, language, why, patterns_used, placeholders, angle, pattern, variants } = { ...draft, caption };
+  const link = f.link; // eslint-disable-line no-unused-vars
   const angled = !!angle && await hasColumns('post_drafts', ['angle', 'pattern']); // db/010_angles.sql
   const details = {
     kind: 'generate', why: why || [], patterns_used: patterns_used || [], placeholders: placeholders || [], product_id: product.id,
+    photos: paths.map(refFor), link, // the images in order, cover first, and the optional link the caption carries
     ...(angle && { angle, pattern: pattern ?? null }), ...(Array.isArray(variants) && variants.length && { variants }),
     product: { name, ...f, ...(hasExtras ? {} : { photo_paths: paths, analysis: analysis ?? null }) }, // keeps what 005 would have stored
   };

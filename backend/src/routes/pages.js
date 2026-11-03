@@ -1,5 +1,5 @@
 import express, { Router } from 'express';
-import { listUserPages } from '../facebook.js';
+import { listUserPages, messengerLink } from '../facebook.js';
 import { startSync, getSyncStatus } from '../sync.js';
 import { startTagging, getTagStatus } from '../tag.js';
 import { DEMO_PAGE_ID } from '../demo.js';
@@ -293,7 +293,8 @@ router.post('/:id/stock/xlsx', async (req, res) => {
 // Real pages keep their brand and branded photos in Supabase Storage. The demo keeps everything in the visitor's tab:
 // its logo and settings come along with each request (a PNG data URL) and nothing is stored.
 const dataUrl = (buf, mime = 'image/png') => `data:${mime};base64,${buf.toString('base64')}`;
-const renderLimit = rateLimit((req) => `render:${req.params.id}:${req.ip}`, () => 400);
+const MAX_IMAGES = 10; // images per post
+const renderLimit = rateLimit((req) => `render:${req.params.id}:${req.ip}`, () => 1500); // a product shows up to 10 images, and every toggle redraws them all
 
 // The photo to brand: one the owner just uploaded, one sent along by the demo, or a post of this page.
 async function sourcePhoto(pageId, source = {}) {
@@ -336,13 +337,13 @@ router.post('/:id/branding/detect', requireManager, generationLimit, reply(async
   return { ...found, phrase: named.phrase, worn: named.worn };
 }));
 
-const renderFrom = async (req, { demo }) => {
-  const { boxes, options, price, offer } = req.body;
-  const photo = await sourcePhoto(req.params.id, req.body.source);
+const renderFrom = async (req, { demo, body = req.body }) => {
+  const { boxes, options, price, offer } = body;
+  const photo = await sourcePhoto(req.params.id, body.source);
   const safeBoxes = (Array.isArray(boxes) ? boxes : []).slice(0, 12).map((b) => ({ x1: +b.x1, y1: +b.y1, x2: +b.x2, y2: +b.y2 }))
     .filter((b) => [b.x1, b.y1, b.x2, b.y2].every((n) => Number.isFinite(n) && n >= 0 && n <= 1) && b.x2 > b.x1 && b.y2 > b.y1);
-  const brand = demo ? { color: req.body.color } : await brandView(req.params.id);
-  const logo = demo ? (req.body.logo ? await logoFromDataUrl(req.body.logo) : null) : await loadLogo(req.params.id);
+  const brand = demo ? { color: body.color } : await brandView(req.params.id);
+  const logo = demo ? (body.logo ? await logoFromDataUrl(body.logo) : null) : await loadLogo(req.params.id);
   const color = /^#[0-9a-f]{6}$/i.test(brand.color ?? '') ? brand.color : '#12694A';
   const priceNum = Number(price);
   return renderBranded({
@@ -353,6 +354,52 @@ const renderFrom = async (req, { demo }) => {
 const summary = ({ buffer, blocked, ...info }) => ({ image: dataUrl(buffer, 'image/jpeg'), ...info, blocked: undefined });
 
 router.post('/:id/branding/render', requireManager, renderLimit, reply(async (req) => summary(await renderFrom(req, { demo: req.params.id === DEMO_PAGE_ID }))));
+
+// A product with several photos: the product is found in every photo (one generation however many photos), one at a time
+// per photo, three photos in parallel. A photo that fails is reported by itself; the rest still come back.
+router.post('/:id/branding/detect-many', requireManager, generationLimit, reply(async (req) => {
+  const sources = Array.isArray(req.body.sources) ? req.body.sources.slice(0, MAX_IMAGES) : [];
+  if (!sources.length) throw Object.assign(new Error('Choose at least one photo to brand.'), { status: 400 });
+  const items = new Array(sources.length);
+  let next = 0;
+  await Promise.all(Array.from({ length: Math.min(3, sources.length) }, async () => {
+    for (let i; (i = next++) < sources.length;) {
+      try {
+        const photo = await sourcePhoto(req.params.id, sources[i]);
+        const named = await productPhrase(photo, req.body.hint);
+        items[i] = { ...(await detectProduct(photo, named)), phrase: named.phrase, worn: named.worn };
+      } catch (e) { items[i] = { error: e.message }; }
+    }
+  }));
+  return { items };
+}));
+
+// The page's Messenger order link (https://m.me/<username>), for the "Add Messenger order link" shortcut.
+router.get('/:id/messenger-link', requireManager, reply(async (req) => {
+  if (req.params.id === DEMO_PAGE_ID) return { link: 'https://m.me/demo-shop', demo: true };
+  const { data } = await db.from('pages').select('access_token').eq('id', req.params.id).maybeSingle();
+  try { return { link: await messengerLink(req.params.id, data?.access_token) }; } catch { return { link: `https://m.me/${req.params.id}` }; }
+}));
+
+// Keeps ALL the branded images with a draft (real pages only): every photo is rendered again from its own boxes and the
+// shared settings, stored in Storage in order; the first is the cover (draft.branded_url).
+router.post('/:id/drafts/:draftId/branded-many', rejectDemoWrites, requireManager, renderLimit, reply(async (req) => {
+  if (!(await hasColumns('post_drafts', ['branded_url', 'branding']))) throw Object.assign(new Error('Saving branded photos needs db/009_brand.sql to be run first.'), { status: 409 });
+  const images = Array.isArray(req.body.images) ? req.body.images.slice(0, MAX_IMAGES) : [];
+  if (!images.length) throw Object.assign(new Error('Choose at least one photo to brand.'), { status: 400 });
+  const stamp = Date.now();
+  const stored = [];
+  for (const [i, img] of images.entries()) {
+    const out = await renderFrom(req, { demo: false, body: { ...req.body, source: img.source, boxes: img.boxes, options: { ...req.body.options, ...img.options } } });
+    const ref = await putFile(req.params.id, `branded/${req.params.draftId}-${stamp}-${i + 1}.jpg`, out.buffer, 'image/jpeg');
+    stored.push({ ref, logo: out.logo, badge: out.badge, notes: out.notes });
+  }
+  const { data, error } = await db.from('post_drafts').update({ branded_url: stored[0].ref, branding: { options: req.body.options ?? {}, images: stored } })
+    .eq('id', req.params.draftId).eq('page_id', req.params.id).select('id').maybeSingle();
+  if (error) throw error;
+  if (!data) throw Object.assign(new Error('Draft not found.'), { status: 404 });
+  return { branded_urls: await Promise.all(stored.map((s) => signedUrl(s.ref))), notes: stored.map((s) => s.notes) };
+}));
 
 // Keeps the branded image with a draft (real pages only): rendered again here from the settings, stored in Storage.
 router.post('/:id/drafts/:draftId/branded', rejectDemoWrites, requireManager, renderLimit, reply(async (req) => {

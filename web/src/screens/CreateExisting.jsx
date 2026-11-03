@@ -3,7 +3,9 @@ import { get, patch, post } from '../api'
 import { applyLocal } from '../catalogLocal'
 import { chooseVariant, fromDraft, loadDrafts, saveDemoDraft, updateDemoDraft } from '../drafts'
 import { Card, LanguageToggle, PostEditor } from '../components/PostEditor'
-import { BrandedPhoto } from '../components/BrandedPhoto'
+import { BrandedGallery } from '../components/BrandedGallery'
+import { LinkField } from '../components/LinkField'
+import { linkProblem } from '../linkTools'
 import { VariantCards } from '../components/VariantCards'
 import { ErrorState, Skeleton } from '../components/ui'
 
@@ -22,6 +24,7 @@ export function CreateExisting({ session, from, hint }) {
   const [resultKey, setResultKey] = useState(0)
   const [pending, setPending] = useState(!!(from.improvePostId || from.draftId))
   const [error, setError] = useState(null)
+  const [link, setLink] = useState('') // optional; only a catalog product's post can carry it
   const [improveId, setImproveId] = useState(from.improvePostId || null)
 
   const adopt = (r) => {
@@ -38,7 +41,7 @@ export function CreateExisting({ session, from, hint }) {
   const start = (promise) => { setPending(true); setError(null); settle(promise) }
 
   const generate = (lang = language) => start(post(`/pages/${pageId}/posts/generate`, {
-    accessToken: session.token, language: lang, hint, ...(freeText ? { description } : fromCatalog ? { productId: productKey } : { productKey }),
+    accessToken: session.token, language: lang, hint, ...(freeText ? { description } : fromCatalog ? { productId: productKey, ...(link.trim() && { link: link.trim() }) } : { productKey }),
   }).then(stash))
   const improve = (lang) => start(post(`/pages/${pageId}/posts/improve`, {
     accessToken: session.token, postId: improveId, ...(lang && { language: lang }),
@@ -151,10 +154,14 @@ export function CreateExisting({ session, from, hint }) {
         </Card>
       )}
 
+      {!result && !improving && !freeText && fromCatalog && productKey && (
+        <Card title="Link (optional)"><LinkField session={session} value={link} onChange={setLink} disabled={pending} /></Card>
+      )}
+
       <LanguageToggle language={language} onChange={pickLanguage} disabled={pending} />
 
       {!result && !improving && (
-        <button onClick={() => generate()} disabled={pending || needsInput}
+        <button onClick={() => generate()} disabled={pending || needsInput || !!linkProblem(link)}
           className="min-h-12 rounded-btn bg-accent px-5 text-[15px] font-bold text-white disabled:opacity-50">
           {pending ? 'Writing…' : 'Write my post'}
         </button>
@@ -174,7 +181,7 @@ export function CreateExisting({ session, from, hint }) {
       {result && !pending && (
         <PostEditor key={resultKey} result={result} photo={photo} onSaveEdit={saveEdit}
           photoSlot={!session.demo && result.source_post_id && (
-            <BrandedPhoto session={session} source={{ post_id: result.source_post_id }} hint={product?.label}
+            <BrandedGallery session={session} sources={[{ id: result.source_post_id, source: { post_id: result.source_post_id } }]} hint={product?.label}
               price={product?.price ?? null} draftId={result.draft_id} />
           )}
           onRegenerate={() => (improving ? improve(language) : generate())}

@@ -3,7 +3,9 @@ import { API_URL, post } from '../api'
 import { chooseVariant, saveDemoDraft } from '../drafts'
 import { MAX_PHOTO_MB, MAX_PHOTOS, blobToDataUrl, shrink } from '../photoTools'
 import { Card, LanguageToggle, PostEditor } from '../components/PostEditor'
-import { BrandedPhoto } from '../components/BrandedPhoto'
+import { BrandedGallery } from '../components/BrandedGallery'
+import { LinkField } from '../components/LinkField'
+import { linkProblem } from '../linkTools'
 import { VariantCards } from '../components/VariantCards'
 import { ErrorState, Skeleton } from '../components/ui'
 
@@ -12,7 +14,7 @@ const ISSUE = {
   product_cut_off: 'Product is cut off', product_too_small: 'Product looks small in the photo', glare: 'Glare',
   low_resolution: 'Low resolution', other: 'Other problem',
 }
-const EMPTY_FORM = { name: '', price: '', sizes: '', colors: '', stock: '', offer: '' }
+const EMPTY_FORM = { name: '', price: '', sizes: '', colors: '', stock: '', offer: '', link: '' }
 
 function Field({ label, hint, guess, required, children }) {
   return (
@@ -34,6 +36,8 @@ export function CreateNew({ session }) {
   const picker = useRef(null)
   const [photos, setPhotos] = useState([]) // { id, previewUrl, status: preparing | ready | error, uploadId | data, error }
   const [analysis, setAnalysis] = useState(null)
+  const [analysedIds, setAnalysedIds] = useState([]) // the photos in the order they were analysed: tips name them by position
+  const [dragId, setDragId] = useState(null)
   const [tips, setTips] = useState([])
   const [form, setForm] = useState(EMPTY_FORM)
   const [guessed, setGuessed] = useState({}) // fields prefilled by the AI and not edited yet
@@ -79,6 +83,14 @@ export function CreateNew({ session }) {
     if (picker.current) picker.current.value = '' // the same photo can be picked again
   }
   const removePhoto = (id) => { setPhotos((list) => list.filter((p) => p.id !== id)); stale() }
+  // order is the cover first; changing it does not redo the analysis (tips follow the photos to their new places)
+  const moveTo = (id, to) => setPhotos((list) => {
+    const from = list.findIndex((p) => p.id === id)
+    if (from < 0 || to < 0 || to >= list.length || from === to) return list
+    const next = [...list]
+    next.splice(to, 0, next.splice(from, 1)[0])
+    return next
+  })
 
   const analyse = async () => {
     setBusy('analysing'); setError(null)
@@ -87,7 +99,7 @@ export function CreateNew({ session }) {
         accessToken: session.token,
         images: ready.map((p) => (session.demo ? { data: p.data } : { upload_id: p.uploadId })),
       })
-      setAnalysis(r.analysis); setTips(r.tips)
+      setAnalysis(r.analysis); setTips(r.tips); setAnalysedIds(ready.map((p) => p.id))
       // prefill what is still empty; edits the owner already made are kept
       const colors = r.analysis.colors.filter((c) => c.confidence !== 'low').map((c) => c.name).join(', ')
       setForm((f) => ({ ...f, name: f.name || r.analysis.suggested_name, colors: f.colors || colors }))
@@ -97,6 +109,7 @@ export function CreateNew({ session }) {
   }
 
   const priceOk = /\d/.test(form.price)
+  const linkBad = linkProblem(form.link)
   const generate = async (lang = language) => {
     setBusy('generating'); setError(null)
     try {
@@ -129,18 +142,32 @@ export function CreateNew({ session }) {
     setBusy(null)
   }
 
+  const tipImages = (t) => {
+    const at = (t.images ?? []).map((n) => ready.findIndex((p) => p.id === analysedIds[n - 1]) + 1).filter(Boolean).sort((a, b) => a - b)
+    if (!at.length) return ''
+    const which = at.length === 1 ? `Image ${at[0]} is` : `Images ${at.slice(0, -1).join(', ')} and ${at.at(-1)} are`
+    return `${which} ${t.yours.value}. `
+  }
   const working = busy !== null || photos.some((p) => p.status === 'preparing')
   const problems = analysis?.photos.flatMap((p) => p.quality_issues.map((q) => ({ ...q, photo: p.index + 1 }))) ?? []
 
   return (
     <>
       <Card title="1. Photos of your new product">
-        <p className="text-sm text-muted">Add 1 to {MAX_PHOTOS} photos (up to {MAX_PHOTO_MB} MB each). Take one now or pick from your gallery. Location data is removed.</p>
+        <p className="text-sm text-muted">Add 1 to {MAX_PHOTOS} photos (up to {MAX_PHOTO_MB} MB each). Take one now or pick from your gallery. Location data is removed. The first photo is the cover: drag photos, or use the arrows, to change the order.</p>
         {photos.length > 0 && (
           <ul className="grid grid-cols-3 gap-2" aria-label="Your photos">
             {photos.map((p, i) => (
-              <li key={p.id} className="relative">
+              <li key={p.id} className={`relative flex flex-col gap-1 ${dragId === p.id ? 'opacity-40' : ''}`} draggable
+                onDragStart={() => setDragId(p.id)} onDragEnd={() => setDragId(null)}
+                onDragOver={(e) => { e.preventDefault(); if (dragId && dragId !== p.id) moveTo(dragId, i) }}>
                 <img src={p.previewUrl} alt={`Photo ${i + 1}`} className={`aspect-square w-full rounded-btn bg-track object-cover ${p.status !== 'ready' ? 'opacity-50' : ''}`} />
+                <span className={`absolute top-1 left-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${i === 0 ? 'bg-accent text-white' : 'bg-black/60 text-white'}`}>{i === 0 ? 'Cover' : i + 1}</span>
+                <div className="flex gap-1">
+                  <button onClick={() => moveTo(p.id, i - 1)} disabled={i === 0} aria-label={`Move photo ${i + 1} earlier`} className="min-h-9 flex-1 rounded-btn border border-line bg-white text-sm font-bold disabled:opacity-40">←</button>
+                  <button onClick={() => moveTo(p.id, i + 1)} disabled={i === photos.length - 1} aria-label={`Move photo ${i + 1} later`} className="min-h-9 flex-1 rounded-btn border border-line bg-white text-sm font-bold disabled:opacity-40">→</button>
+                </div>
+                {i > 0 && <button onClick={() => moveTo(p.id, 0)} className="min-h-9 rounded-btn border border-line bg-white text-[11px] font-bold">Make cover</button>}
                 {p.status === 'preparing' && <span className="absolute inset-0 flex items-center justify-center text-xs font-semibold">Uploading…</span>}
                 {p.status === 'error' && <span role="alert" className="absolute inset-x-0 bottom-0 rounded-b-btn bg-warn-soft p-1 text-[10px] text-warn">{p.error}</span>}
                 <button onClick={() => removePhoto(p.id)} aria-label={`Remove photo ${i + 1}`}
@@ -197,7 +224,7 @@ export function CreateNew({ session }) {
               ? <p className="text-sm text-muted">Nothing to change. Your playbook has no photo style that clearly beats this one.</p>
               : (
                 <ul className="flex flex-col gap-2.5 text-sm">
-                  {tips.map((t) => <li key={t.dimension} className="border-l-2 border-accent-pale pl-3">{t.text}</li>)}
+                  {tips.map((t) => <li key={t.dimension} className="border-l-2 border-accent-pale pl-3">{tipImages(t)}{t.text}</li>)}
                 </ul>
               )}
           </Card>
@@ -222,11 +249,12 @@ export function CreateNew({ session }) {
             <Field label="Offer" hint="for example 10% off this week">
               <input value={form.offer} onChange={(e) => setField('offer', e.target.value)} maxLength={100} className={inputClass} />
             </Field>
+            <LinkField session={session} value={form.link} onChange={(v) => setField('link', v)} />
           </Card>
 
           <LanguageToggle language={language} onChange={pickLanguage} disabled={busy !== null} />
           {!result && (
-            <button onClick={() => generate()} disabled={!priceOk || working}
+            <button onClick={() => generate()} disabled={!priceOk || !!linkBad || working}
               className="min-h-12 rounded-btn bg-accent px-5 text-[15px] font-bold text-white disabled:opacity-50">
               {busy === 'generating' ? 'Writing…' : 'Write my post'}
             </button>
@@ -249,7 +277,7 @@ export function CreateNew({ session }) {
       {result && busy !== 'generating' && (
         <PostEditor key={resultKey} result={result} photo={photos[0]?.previewUrl}
           photoSlot={ready[0] && (
-            <BrandedPhoto session={session} source={session.demo ? { data: ready[0].data } : { upload_id: ready[0].uploadId }}
+            <BrandedGallery session={session} sources={ready.map((p) => ({ id: p.id, source: session.demo ? { data: p.data } : { upload_id: p.uploadId } }))}
               hint={analysis?.product_phrase} price={priceOk ? form.price : null} offer={form.offer.trim() || null} draftId={saved?.draftId} />
           )}
           onCaption={setCaption} onRegenerate={() => generate()}

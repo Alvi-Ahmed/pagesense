@@ -163,9 +163,11 @@ const BAIT = [
 const URGENCY = /\bonly\s+(?:\d+|a few|few)\s+(?:pieces?|pcs|units?|pairs?|items?|sets?)?\s*(?:left|remaining)\b|\b(?:few|last)\s+(?:pieces?|pairs?|items?|left)\b|\b(?:selling|going) fast\b|\bwhile (?:stock|stocks|supplies) lasts?\b|\bhurry\b|\b(?:almost|nearly) (?:gone|sold out)\b|\bstock (?:is )?(?:running )?(?:low|ending)\b|\b(?:ends?|ending) (?:today|tonight|soon|tomorrow)\b|\blast chance\b|\b(?:matro|shudhu|sudhu)\s*\d+\s*(?:ta|pis|piece|pcs)?\s*(?:ache|achhe|baki|ase)\b|\bstock (?:sesh|shesh|kom)\b|\bshesh hoye\b|আর মাত্র|মাত্র \d+|শেষ হয়ে|স্টক শেষ|শেষ সুযোগ/giu;
 const COUNT_CLAIM = /\b(?:only|matro|shudhu|sudhu)\s*(\d+)|(?:আর )?মাত্র\s*(\d+)/giu;
 
-export function checkCaption(caption, { allowedNumbers, knownText, priceRequired, language, forbiddenNames = [], requiredPrice = null, requiredPlaceholders = [], noOffer = false, requiredNumbers = [], stockKnown = false, stockLeft = null }) {
+export function checkCaption(caption, { allowedNumbers, knownText, priceRequired, language, forbiddenNames = [], requiredPrice = null, requiredPlaceholders = [], noOffer = false, requiredNumbers = [], stockKnown = false, stockLeft = null, link = null }) {
   const problems = [];
-  const text = String(caption ?? '').trim();
+  const original = String(caption ?? '').trim();
+  // the owner's link is a fact written exactly as entered: it is taken out before the numbers, colors and words are checked
+  const text = link ? original.split(link).join(' ') : original;
   if (text.length < 20) return ['the caption is empty or far too short'];
   if (text.length > 1500) problems.push('the caption is too long (keep it under 1500 characters)');
 
@@ -190,7 +192,15 @@ export function checkCaption(caption, { allowedNumbers, knownText, priceRequired
     problems.push('policies (refund, exchange, cancellation, warranty) are not known facts: leave them out');
   }
   if (/\*\*|^#{1,6}\s/m.test(text)) problems.push('plain text only: Facebook shows ** and # headings literally');
-  if (/https?:\/\/|www\.|@\S|[\w.+-]+@[\w-]+\.[\w.]+/.test(text)) problems.push('no links, e-mail addresses or @mentions');
+  if (/@\S|[\w.+-]+@[\w-]+\.[\w.]+/.test(text)) problems.push('no e-mail addresses or @mentions');
+  // any URL must be exactly the one the owner entered, and that one must be there (once)
+  const urls = (original.match(/(?:https?:\/\/|www\.|\bm\.me\/)\S+/gi) || []).map((u) => u.replace(/[.,!?)\]”"']+$/, ''));
+  if (!link && urls.length) problems.push('no links: the owner gave none');
+  if (link) {
+    const stray = urls.filter((u) => u !== link);
+    if (stray.length) problems.push(`the only link allowed is exactly ${link} (found ${stray[0]}): copy it character for character`);
+    if (original.split(link).length - 1 !== 1) problems.push(`the owner's link ${link} must appear exactly once, written exactly as given`);
+  }
   if (/\bcustomer\s*\d+\b/i.test(text)) problems.push('no customer names or references to comments');
   for (const n of forbiddenNames) {
     if (text.toLowerCase().includes(n.toLowerCase())) problems.push(`the name "${n}" is a person's name: remove it`);
@@ -304,7 +314,7 @@ const rulesBlock = (ctx, languageRule, priceRequired, extra = {}) => `RULES (all
 - Unknown facts are price, sizes, colors, delivery charge and stock count. Never invent them. Write exactly one of ${PLACEHOLDERS.map((p) => `[${p}]`).join(', ')} where such a fact belongs.
 - Any number in the caption must appear in the known facts; if not, do not write a number at all (no discounts, percentages, sizes, prices or phone numbers you made up).
 - ${extra.priceRule || priceRuleText(ctx.price_question_share_pct, priceRequired)}
-${(extra.lines || []).map((l) => `- ${l}\n`).join('')}- No customer names, no @mentions, no links, nothing taken from customer comments.
+${(extra.lines || []).map((l) => `- ${l}\n`).join('')}- No customer names, no @mentions, no links except the owner's own link when the known facts have one, nothing taken from customer comments.
 - Same style as the examples: their tone, length, emoji and layout. Do not copy their facts, prices, policies (refund, exchange, cancellation) or promises. Plain text only: no ** or markdown.`;
 
 function generatePrompt({ ctx, examples, facts, language, priceRequired, hint, problems, extra }) {
@@ -715,6 +725,18 @@ async function runVariants({ agent, fallbackPrompt, language, allowedNumbers, kn
 const clean = (v, n) => clip(String(v ?? '').replace(/[\u0000-\u001f]/g, ' ').trim(), n);
 const splitList = (v) => clean(v, 120).split(/[,;\n]/).map((x) => x.trim()).filter(Boolean).slice(0, 12);
 
+// The optional link: a proper https URL (website, product page, or m.me/<page> for ordering on Messenger). Kept exactly as
+// entered (only surrounding spaces are removed) because the caption must carry it character for character.
+export function parseLink(value) {
+  const text = String(value ?? '').trim();
+  if (!text) return null;
+  let url;
+  try { url = new URL(text); } catch { throw fail('The link is not a proper web address. Start it with https://, for example https://m.me/yourpage'); }
+  if (url.protocol !== 'https:') throw fail('The link must start with https://');
+  if (/\s/.test(text) || text.length > 300 || url.username || url.password || !url.hostname.includes('.')) throw fail('That link does not look right. Check it and paste it again.');
+  return text;
+}
+
 // The owner's form, checked and tidied. Only the price is required.
 export function parseProductForm(form = {}, { priceOptional = false } = {}) {
   const priceText = toAscii(form.price).replace(/[,\s৳]|tk\.?|taka|bdt/gi, '');
@@ -725,7 +747,7 @@ export function parseProductForm(form = {}, { priceOptional = false } = {}) {
   if (stock !== null && (!Number.isFinite(stock) || stock < 0)) throw fail('Stock must be a number, or leave it empty.');
   return {
     name: clean(form.name, 80) || null, price, sizes: splitList(form.sizes), colors: splitList(form.colors),
-    stock, offer: clean(form.offer, 100) || null,
+    stock, offer: clean(form.offer, 100) || null, link: parseLink(form.link),
   };
 }
 
@@ -734,6 +756,7 @@ function newProductFacts(f, analysis, availability = null) {
     product_name: f.name, product_type: analysis?.product_type || null, looks_like: analysis?.product_phrase || null,
     price: f.price == null ? null : { amount: f.price, currency: 'Bangladeshi taka (Tk or ৳)' }, availability,
     sizes: f.sizes.length ? f.sizes : null, colors: f.colors.length ? f.colors : null, stock: f.stock, offer: f.offer,
+    ...(f.link && { link: f.link }),
   };
 }
 
@@ -752,11 +775,12 @@ export async function generateNewProduct(pageId, { form, analysis, language, hin
       ...(missing.length ? [`These were left empty by the owner, so the caption must contain these exact placeholders: ${missing.map((m) => `[${m}]`).join(', ')}.`] : []),
       ...(f.offer ? [`The owner's offer is ${JSON.stringify(f.offer)}: mention it exactly as given, including its numbers.`] : ['No offer was given: do not mention any discount, sale or offer.']),
       'Do not claim availability (pre-order, limited stock, sold out, in stock) unless it is in the known facts.',
+      ...(f.link ? [`The owner's link is ${f.link} . Put it in the caption exactly once, character for character (no shortening, no extra characters, no markdown), in a natural spot such as "Order here: ${f.link}" (words in the caption's language). Write no other link.`] : []),
     ],
   };
   // Urgency is real only when the stock count is known and low; the same number is then the only count the caption may state.
   const stockLow = f.stock !== null && f.stock > 0 && f.stock <= await lowStockThreshold(pageId).catch(() => 3);
-  const rulesBase = { requiredPrice: f.price == null ? null : String(f.price), requiredPlaceholders: missing, noOffer: !f.offer, stockKnown: f.stock !== null, requiredNumbers: f.offer ? [...numbersIn(f.offer)] : [], stockLeft: stockLow ? f.stock : null };
+  const rulesBase = { requiredPrice: f.price == null ? null : String(f.price), requiredPlaceholders: missing, noOffer: !f.offer, stockKnown: f.stock !== null, requiredNumbers: f.offer ? [...numbersIn(f.offer)] : [], stockLeft: stockLow ? f.stock : null, link: f.link };
 
   const patterns = variants ? qualifiedPatterns(pbData, ctx) : [];
   if (patterns.length) {
@@ -809,14 +833,14 @@ export async function generateNewProduct(pageId, { form, analysis, language, hin
 // ---- generate from a product in the catalog (the "existing product" option) -------------------------------------
 // The catalog holds what the owner has confirmed, so a known price must be written and unknown facts become
 // placeholders, exactly as for a new product.
-export async function generateFromCatalog(pageId, { productId, language, hint }) {
+export async function generateFromCatalog(pageId, { productId, language, hint, link }) {
   const product = await getCatalogProduct(pageId, productId);
   if (product.status === 'sold_out') throw fail('This product is marked sold out. Restock it before writing a post about it.', 409);
   // a "few left" post may say so only when the stock count is known and low
   const low = product.stock != null && product.stock > 0 && product.stock <= await lowStockThreshold(pageId);
   const availability = low ? `limited stock: only ${product.stock} left` : product.status === 'pre_order' ? 'pre-order (the caption may say so)' : null;
   const result = await generateNewProduct(pageId, {
-    form: { name: product.name, price: product.price ?? '', sizes: product.sizes.join(', '), colors: product.colors.join(', '), stock: product.stock ?? '', offer: product.offer ?? '' },
+    form: { name: product.name, price: product.price ?? '', sizes: product.sizes.join(', '), colors: product.colors.join(', '), stock: product.stock ?? '', offer: product.offer ?? '', link },
     analysis: { product_type: product.type, product_phrase: product.phrase || product.name },
     language, hint, priceOptional: true, availability,
   });
@@ -894,7 +918,12 @@ export async function listDrafts(pageId) {
   const { data, error } = await db.from('post_drafts').select('*').eq('page_id', pageId)
     .eq('status', 'draft').order('created_at', { ascending: false }).limit(20);
   if (error) throw error;
-  return Promise.all(data.map(async (d) => ({ ...d, photo_url: await showableUrl(d.photo_url), branded_url: await signedUrl(d.branded_url) })));
+  return Promise.all(data.map(async (d) => ({
+    ...d, photo_url: await showableUrl(d.photo_url), branded_url: await signedUrl(d.branded_url),
+    // all images of the draft in order (cover first), and their branded versions when they were kept
+    photo_urls: await Promise.all((d.why?.photos || []).map(showableUrl)),
+    branded_urls: await Promise.all((d.branding?.images || []).map((i) => signedUrl(i.ref))),
+  })));
 }
 
 // `variant` ({ angle, pattern }) is set when the owner picks one of the caption variants; it is kept with the draft.

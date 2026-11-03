@@ -137,6 +137,31 @@ Status: DONE / PARTIAL / MISSING. Update this file after each item.
     angle, "Your X posts outperform your Y posts, based on N posts" (median engagement). Existing posts have no
     angle, so this card appears only after posts are published through PageSense.
     Also fixed: saving a new product wrote products.source 'upload' but 006 allows 'uploaded'.
+9c. DONE: Several images per post, and an optional link (extends 9 + 10 + 16).
+    Before this: 1-5 photos could be uploaded and analysed together for a new product, but they had no order or cover, the
+    draft kept only the first, branding handled one photo, there was no link field, and captions could not contain any URL.
+    Images: 1-10 per new product (MAX 10 on server and screen). The Create screen lets the seller drag photos (or use the
+    arrows), remove, and "Make cover" (the first photo is the cover). Reordering keeps the analysis; photo tips carry the
+    image numbers they are about and the screen words them from the CURRENT order ("Image 3 is flat. Your flat photos get ...").
+    Saving keeps the order on the draft (why.photos, signed in GET /drafts as photo_urls). Branding (BrandedGallery.jsx):
+    POST /branding/detect-many finds the product in EVERY image with Muse Spark + SAM 3.1 (3 at a time, counts as ONE
+    generation), each image is rendered on its own boxes with the same settings (logo, format, move logo), so the logo
+    never covers the product in any image; the price badge is on the cover only unless "badge on all". "Download all
+    (zip)" builds a zip in the browser (src/zip.js, no library), demo included. POST /drafts/:id/branded-many stores
+    every branded image in order (draft.branded_url = cover, branding.images = all; GET /drafts returns branded_urls).
+    Render limit raised to 1500/hour (every toggle redraws up to 10 images). JSON body limit 24 MB for demo uploads.
+    Link: optional "Link" field (new-product form and catalog posts). parseLink: must be a proper https URL (no
+    credentials, a dot in the host, no spaces, max 300 chars), stored exactly as entered. "Add Messenger order link"
+    fills https://m.me/<page username> (GET /pages/:id/messenger-link, falls back to the page id; demo returns a
+    placeholder). The writer is told to put it once in a natural spot ("Order here: <link>"); checkCaption now rejects any
+    URL (https, www, m.me) that is not exactly the entered one, a missing or repeated link, and any URL when none was
+    given; the link is cut out of the text before numbers, colors and words are checked. The UI says Facebook shows the
+    photos, not a link preview, when a post has photos. Variants pass through the same rule. The link is kept on the draft
+    (why.link). Not covered: reordering images of an already saved draft; free-text and "improve" posts take no link.
+    Publishing (item 11, still MISSING as a feature): facebook.js publishPhotoPost() is written to the Graph API docs
+    (each photo POSTed to /{page-id}/photos with published=false, then ONE POST /{page-id}/feed with message and
+    attached_media[i]={"media_fbid":"<id>"}; JPEG up to 10 MB; the docs give no photo-count limit, we cap at 10; needs
+    pages_manage_posts). It is NOT called from any route and was NOT run against a live page.
 10. DONE: Photo branding. Brand settings (header menu): shop name, brand color, logo upload (PNG, or SVG which is
     checked then rasterised; a logo on a white box gets the white keyed out) or "Generate a logo" (muse-image-1.0,
     wordmark or icon + name, 3 options, each read back by Muse Spark to confirm the spelling). Stored in the

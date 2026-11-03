@@ -65,3 +65,36 @@ export async function listUserPages(userToken) {
   } while (after);
   return pages;
 }
+
+// The page's Messenger order link: https://m.me/<username>, or the page id when the page has no username.
+export async function messengerLink(pageId, accessToken) {
+  const page = await graph(`/${pageId}`, { fields: 'username', access_token: accessToken });
+  return `https://m.me/${page.username || pageId}`;
+}
+
+// Multi-photo post, per the Graph API docs (developers.facebook.com/docs/graph-api/reference/page/photos): every photo is
+// uploaded UNPUBLISHED (published=false; Facebook keeps it about 24 hours), then ONE feed post attaches them all with
+// attached_media[i]={"media_fbid":"<id>"}. Photos are JPEG buffers, at most 10 MB each. Returns the post id.
+// NOT called from any route yet: publishing is item 11, and a call here posts to the live page.
+export async function publishPhotoPost(pageId, accessToken, { message, photos }) {
+  const post = async (path, body) => {
+    const res = await fetch(`${GRAPH}${path}`, { method: 'POST', body, signal: AbortSignal.timeout(60_000) });
+    const json = await res.json();
+    if (!res.ok || json.error) throw Object.assign(new Error(json.error?.message || `Graph API ${res.status}`), { status: 400, fb: json.error });
+    return json;
+  };
+  if (!photos?.length || photos.length > 10) throw Object.assign(new Error('A post needs 1 to 10 photos.'), { status: 400 });
+  const ids = [];
+  for (const [i, jpeg] of photos.entries()) {
+    const form = new FormData();
+    form.set('source', new Blob([jpeg], { type: 'image/jpeg' }), `photo-${i + 1}.jpg`);
+    form.set('published', 'false');
+    form.set('access_token', accessToken);
+    ids.push((await post(`/${pageId}/photos`, form)).id);
+  }
+  const form = new FormData();
+  form.set('message', message);
+  ids.forEach((id, i) => form.set(`attached_media[${i}]`, JSON.stringify({ media_fbid: id })));
+  form.set('access_token', accessToken);
+  return (await post(`/${pageId}/feed`, form)).id;
+}
