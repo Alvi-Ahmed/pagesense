@@ -95,7 +95,10 @@ export function Landing({ onConnected, notice }) {
 
   return (
     <main className="mx-auto flex min-h-svh max-w-[430px] flex-col justify-center gap-6 bg-bg px-5 py-10">
-      <h1 className="text-4xl font-bold tracking-tight">PageSense</h1>
+      <div className="flex items-center gap-3">
+        <img src="/logo.png" alt="" className="size-14" />
+        <h1 className="text-4xl font-bold tracking-tight">PageSense</h1>
+      </div>
       <p className="text-lg text-muted">
         An AI marketing analyst for Facebook page sellers. Learns what sells,
         builds your catalog, and writes posts in your voice, in Bangla, English
