@@ -72,10 +72,22 @@ function Card({ order, busy, act }) {
         <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${lead ? 'bg-info-soft text-info' : 'bg-accent-soft text-accent-dark'}`}>{lead ? 'Lead' : 'Order'}</span>
       </div>
 
-      <blockquote className="rounded-btn bg-bg px-3 py-2 text-sm italic">
-        “{order.comment}”
-        {order.followups.map((f, i) => <span key={i} className="mt-1 block not-italic text-muted">↳ {f}</span>)}
-      </blockquote>
+      {order.conversation?.length
+        ? (
+          <ol aria-label="Messenger chat" className="flex flex-col gap-1.5 rounded-btn bg-bg px-3 py-2.5 text-sm">
+            {order.conversation.slice(-6).map((m, i) => (
+              <li key={i} className={m.from === 'page' ? 'self-end rounded-xl bg-accent-soft px-2.5 py-1.5 text-right text-accent-dark' : 'self-start rounded-xl bg-white px-2.5 py-1.5'}>
+                <span className="sr-only">{m.from === 'page' ? 'You: ' : 'Customer: '}</span>{m.text}
+              </li>
+            ))}
+          </ol>
+        )
+        : (
+          <blockquote className="rounded-btn bg-bg px-3 py-2 text-sm italic">
+            “{order.comment}”
+            {order.followups.map((f, i) => <span key={i} className="mt-1 block not-italic text-muted">↳ {f}</span>)}
+          </blockquote>
+        )}
 
       {lead
         ? <p className="text-xs text-muted">They showed interest but did not say they want to buy. If you think they do, mark it as an order.</p>
@@ -162,6 +174,12 @@ export function Orders() {
     reply: (o) => post(`/pages/${pageId}/orders/${o.id}/reply`, token),
   }
 
+  // reads the page's Messenger chats (read only, nothing is sent) and makes cards for new orders and leads
+  const checkMessages = () => run(async () => {
+    const r = await post(`/pages/${pageId}/orders/sync`, token)
+    setInfo(r.created ? `Found ${r.orders} new ${r.orders === 1 ? 'order' : 'orders'} and ${r.leads} ${r.leads === 1 ? 'lead' : 'leads'} in ${r.total} new or changed chats.` : `No new orders. ${r.checked} chats checked.`)
+  })
+
   const exportCsv = () => run(async () => {
     const confirmed = orders.filter((o) => o.status === 'confirmed' && o.kind === 'order')
     let blob
@@ -178,7 +196,7 @@ export function Orders() {
     setTimeout(() => URL.revokeObjectURL(a.href), 2000)
   })
 
-  const header = <ScreenHeader title="Orders" subtitle="Orders found in your comments" />
+  const header = <ScreenHeader title="Orders" subtitle="Orders found in your Messenger chats" />
   if (error && !list) return <>{header}<ErrorState message={error} onRetry={() => setAttempt((n) => n + 1)} /></>
   if (!list) return <>{header}<Skeleton className="h-12" /><Skeleton className="h-48" /><Skeleton className="h-48" /></>
 
@@ -205,7 +223,8 @@ export function Orders() {
       )}
       {notice && <ErrorState message={notice} />}
       {info && <p role="status" className="rounded-card bg-accent-soft px-4 py-3 text-sm font-semibold text-accent-dark">{info}</p>}
-      {demo && <p className="text-xs text-muted">Demo mode: status changes and edits stay in this browser tab.</p>}
+      {demo && <p className="text-xs text-muted">Demo mode: made-up Messenger chats. Status changes and edits stay in this browser tab.</p>}
+      {!demo && <button onClick={checkMessages} disabled={busy} className="min-h-12 rounded-btn border border-line bg-white px-5 text-[15px] font-bold disabled:opacity-50">{busy ? 'Working…' : 'Check messages'}</button>}
 
       {tab === 'confirmed' && counts.confirmed > 0 && (
         <button onClick={exportCsv} disabled={busy} className="min-h-12 rounded-btn border border-accent bg-white px-5 text-[15px] font-bold text-accent-dark disabled:opacity-50">
@@ -216,7 +235,7 @@ export function Orders() {
       {realOrders.length === 0 && leads.length === 0 && (
         <EmptyState title={tab === 'to_review' ? 'No orders to review' : tab === 'confirmed' ? 'Nothing confirmed yet' : tab === 'delivered' ? 'Nothing delivered yet' : 'Nothing cancelled'}>
           {orders.length === 0
-            ? (demo ? 'The demo page has no comments that ask to buy.' : 'Comments where customers ask to buy appear here for you to confirm.')
+            ? (demo ? 'The demo page has no Messenger orders.' : 'Customers order in Messenger. Press "Check messages" to bring their orders here for you to confirm.')
             : 'Orders move here as you work through them.'}
         </EmptyState>
       )}
@@ -224,7 +243,7 @@ export function Orders() {
       {leads.length > 0 && (
         <section className="flex flex-col gap-2.5">
           <h2 className="text-[17px] font-bold">Leads <span className="text-sm font-semibold text-muted">{leads.length}</span></h2>
-          <p className="text-sm text-muted">Comments that show interest but do not say they want to buy.</p>
+          <p className="text-sm text-muted">Chats that show interest but do not say they want to buy.</p>
           <ul className="flex flex-col gap-3">{leads.map((o) => <Card key={o.id} order={o} busy={busy} act={act} />)}</ul>
         </section>
       )}

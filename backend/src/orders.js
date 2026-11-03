@@ -3,9 +3,13 @@ import { clip, completeJSON } from './ai.js';
 import { numbersIn, toAscii } from './textutil.js';
 import { checkCaption, detectLanguage } from './generate.js';
 import { onOrderStatusChange } from './stock.js';
+import { fetchConversations } from './messages.js';
+import { hasColumns } from './schema.js';
 
-// Item 7. Orders come from comments classified order_intent, leads from interested ones. Facebook does not tell us who
-// commented, so an order is "Customer on <post>", with the comment id and a link that opens it on Facebook.
+// Item 7. Customers order in Messenger chats: an order is a chat where the customer wants to buy, a lead one where they only
+// show interest (db/011_message_orders.sql). Comments classified order_intent or interested can still become cards when
+// ORDERS_FROM_COMMENTS=on, but pages sell through messages, so that is off by default.
+// A comment card says "Customer on <post>" with a link that opens the comment; a chat card says "Customer on Messenger".
 // The orders table keeps its own status words; the API speaks to_review / confirmed / delivered / cancelled.
 const TO_DB = { to_review: 'pending', confirmed: 'confirmed', delivered: 'fulfilled', cancelled: 'cancelled' };
 const FROM_DB = Object.fromEntries(Object.entries(TO_DB).map(([k, v]) => [v, k]));
@@ -45,6 +49,7 @@ export function quantityStated(text, q) {
   const t = toAscii(text).toLowerCase();
   if (new RegExp(`(?<!size\\s{0,3})(?<![\\d.])${q}\\s{0,2}${UNIT}\\b`).test(t)) return true;
   if (new RegExp(`(?:quantity|qty|koyta|koita)\\s{0,3}:?\\s{0,3}${q}\\b`).test(t)) return true;
+  if (new RegExp(`(?<![\\d.])${q}\\s{0,2}(?:টা|টি|জোড়া|পিস)(?![ঀ-৿])`).test(t)) return true; // \\b does not work after Bangla letters
   return Object.entries(NUMBER_WORDS).some(([word, n]) => n === q && new RegExp(`(?<![a-z])${word}\\s+(?:${UNIT.slice(3, -1)}|pair|pcs?)\\b|(?<![a-z])${word}(?:ta|ti)\\b`).test(t));
 }
 
@@ -90,13 +95,20 @@ Never guess and never fill in a default: null is the right answer when the text 
 
 // Everything the model returns is checked against the text: a size, color or address that is not literally there is
 // dropped, and a quantity must be stated as one. This is what "never guess missing details" means in code.
+// The phone number is its own field: it is taken out of the address ("House 12, Dhanmondi. 01700000001" -> "House 12, Dhanmondi").
+const PHONE_IN_TEXT = /(?:\+?[8৮][8৮][\s-]?)?[0০][1১][3-9৩-৯][\d০-৯\s-]{8,}/g;
+export function withoutPhone(address) {
+  const t = clip(String(address).replace(PHONE_IN_TEXT, ' ').replace(/\s{2,}/g, ' ').replace(/[\s.,;:-]+$/, '').trim(), 300);
+  return t.length >= 8 ? t : null;
+}
+
 export function verifyDetails(raw, text) {
   const addr = String(raw.address ?? '').trim();
   return {
     size: raw.size && written(raw.size, text) ? String(raw.size).trim().slice(0, 20) : null,
     color: raw.color && written(raw.color, text) ? String(raw.color).trim().toLowerCase().slice(0, 30) : null,
     quantity: quantityStated(text, raw.quantity) ? raw.quantity : null,
-    address: addr.length >= 8 && text.includes(addr) ? clip(addr, 300) : null,
+    address: addr.length >= 8 && text.includes(addr) ? withoutPhone(addr) : null,
     phone: findPhone(text),
   };
 }
@@ -138,9 +150,9 @@ export async function hasNewOrderComments(pageId) {
   return (await candidateComments(pageId)).length > 0;
 }
 
-// One order per comment. The customer's direct replies under it are attached, so a "size 40, 01712…" reply counts.
+// (Off by default, see the top of this file.) One order per comment. The customer's direct replies under it are attached, so a "size 40, 01712…" reply counts.
 // Comments the page already answered, and the page's own replies, are skipped.
-export async function createOrders(pageId, { progress } = {}) {
+async function createOrdersFromComments(pageId, { progress } = {}) {
   const todo = await candidateComments(pageId);
   await progress?.(0, todo.length);
   if (!todo.length) return { created: 0, orders: 0, leads: 0, failed: 0, total: 0 };
@@ -191,10 +203,117 @@ export async function createOrders(pageId, { progress } = {}) {
   return { created: rows.length, orders: rows.length - leads, leads, failed, total: todo.length };
 }
 
+// ---- orders from Messenger chats -----------------------------------------------------------------------------
+const CHAT_SCHEMA = {
+  type: 'object',
+  properties: {
+    items: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' }, kind: { type: 'string', enum: ['order', 'lead', 'none'] }, product: { type: ['string', 'null'] },
+          size: { type: ['string', 'null'] }, color: { type: ['string', 'null'] }, quantity: { type: ['integer', 'null'] }, address: { type: ['string', 'null'] },
+        },
+        required: ['id', 'kind', 'product', 'size', 'color', 'quantity', 'address'],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ['items'],
+  additionalProperties: false,
+};
+const CHAT_BATCH = 8;
+
+const CHAT_INSTRUCTIONS = (names) => `You read Messenger chats between customers and a small seller in Bangladesh. Chats may be English, Bangla script or Banglish. Lines start with "customer:" or "page:" (the seller).
+For each chat (an id and its lines) return:
+- kind: "order" if the CUSTOMER clearly wants to buy something (says they want it, will take it, asks to order, confirms, gives an address or phone to deliver to); "lead" if the customer only shows interest or asks questions (price, size, stock, delivery) without deciding to buy; "none" if it is not about buying (complaint only, greeting, spam, the seller writing to themselves).
+- product: the product from the PRODUCT LIST below that the customer is buying or asking about, copied EXACTLY as listed. Customers do not write the full name: pick the listed product their words clearly describe ("pearl sandals" -> "Beige pearl slide sandals"). null only if no listed product clearly fits.
+- size, color, quantity, address: ONLY what the CUSTOMER wrote, exactly as written (quantity as a whole number, only if stated: "2 pair", "ekta"); null if not stated. A number after the word "size" is a size, not a quantity. Never guess and never fill in a default. What the seller wrote is not the customer's choice.
+PRODUCT LIST:
+${names.map((n) => `- ${n}`).join('\n')}`;
+
+// What the customer wrote, for checking details against: only their lines count.
+const customerText = (messages) => messages.filter((m) => m.from === 'customer').map((m) => m.text).join('\n');
+
+async function judgeChats(chats, products) {
+  const input = chats.map((c) => `id: ${c.id}\n${c.messages.slice(-20).map((m) => `${m.from}: ${clip(m.text, 400)}`).join('\n')}`).join('\n---\n');
+  const { data } = await completeJSON('order_extraction', {
+    messages: [{ role: 'user', content: `${CHAT_INSTRUCTIONS(products.map((p) => p.name))}\n\nChats:\n${input}` }],
+    response_format: { type: 'json_schema', json_schema: { name: 'chat_orders', schema: CHAT_SCHEMA } },
+  }, { validate: (d) => { if (!Array.isArray(d?.items)) throw new Error('answer has no "items" array'); } });
+  return new Map(data.items.map((r) => [r.id, r]));
+}
+
+// One card per chat that is an order or a lead. `conversations` defaults to the page's Messenger chats (tests pass their own).
+// Chats already read (and unchanged since) are skipped; every chat read is remembered by id and time only.
+export async function createOrdersFromMessages(pageId, { progress, conversations } = {}) {
+  if (!(await hasColumns('orders', ['source', 'kind', 'conversation_id', 'conversation']))) throw fail('Orders from Messenger need db/011_message_orders.sql to be run first.', 409);
+  const all = conversations ?? await fetchConversations(pageId);
+  const checked = new Map((await fetchAll(() => db.from('conversation_checks').select('conversation_id, updated_time').eq('page_id', pageId).order('conversation_id')))
+    .map((r) => [r.conversation_id, r.updated_time ? +new Date(r.updated_time) : 0]));
+  const todo = all.filter((c) => !checked.has(c.id) || (c.updated_time && +new Date(c.updated_time) > checked.get(c.id)));
+  await progress?.(0, todo.length);
+  if (!todo.length) return { created: 0, orders: 0, leads: 0, failed: 0, total: 0, checked: all.length };
+
+  const { data: products } = await db.from('products').select('id, name, product_type').eq('page_id', pageId).neq('status', 'sold_out').order('name').limit(300);
+  const byName = new Map((products ?? []).map((p) => [p.name.toLowerCase(), p]));
+  const rows = [];
+  const seen = [];
+  let failed = 0;
+  for (const [i, batch] of chunks(todo, CHAT_BATCH).entries()) {
+    try {
+      const judged = await judgeChats(batch, products ?? []);
+      for (const c of batch) {
+        seen.push({ page_id: pageId, conversation_id: c.id, updated_time: c.updated_time ?? null });
+        const j = judged.get(c.id);
+        if (!j || j.kind === 'none') continue;
+        const text = customerText(c.messages);
+        const d = verifyDetails(j, text); // size, color, quantity and address must be literally in what the customer wrote
+        const product = j.product ? byName.get(String(j.product).trim().toLowerCase()) ?? null : null;
+        const fields = { size: d.size, color: d.color, quantity: d.quantity, phone: d.phone, address: d.address };
+        rows.push({
+          page_id: pageId, source: 'message', kind: j.kind, conversation_id: c.id, product_id: product?.id ?? null, status: 'pending', ...fields,
+          conversation: c.messages.slice(-30).map((m) => ({ ...m, text: clip(m.text, 500) })),
+          quantity: fields.quantity ?? 1, missing_fields: missingFor(fields, product?.product_type),
+        });
+      }
+    } catch (e) { failed += batch.length; console.error('chat order extraction failed:', e.status ?? '', JSON.stringify(e.error ?? e.message)); }
+    await progress?.(Math.min((i + 1) * CHAT_BATCH, todo.length), todo.length);
+  }
+  // a chat that already has a card (a changed chat is read again) never gets a second one; the unique index is the backstop
+  const have = new Set((await fetchAll(() => db.from('orders').select('conversation_id').eq('page_id', pageId).not('conversation_id', 'is', null).order('id'))).map((o) => o.conversation_id));
+  const fresh = rows.filter((r) => !have.has(r.conversation_id));
+  for (const part of chunks(fresh, 100)) {
+    const { error } = await db.from('orders').insert(part);
+    if (error) throw new Error(`orders: ${error.message}`);
+  }
+  for (const part of chunks(seen, 200)) await db.from('conversation_checks').upsert(part);
+  if (!rows.length && failed) throw new Error(`orders: all ${failed} chats failed. Check the server log for the cause.`);
+  const leads = fresh.filter((r) => r.kind === 'lead').length;
+  return { created: fresh.length, orders: fresh.length - leads, leads, failed, total: todo.length, checked: all.length };
+}
+
+// The analysis stage: new chats become cards. A page that has not allowed access to messages yet is not an error for the
+// whole analysis; the Orders screen says what to do.
+export async function createOrders(pageId, opts = {}) {
+  let result = { created: 0, orders: 0, leads: 0, failed: 0, total: 0 };
+  try { result = await createOrdersFromMessages(pageId, opts); }
+  catch (e) {
+    if (e.code !== 'messaging_permission' && e.status !== 409 && !/not connected/.test(e.message)) throw e;
+    console.error('orders from messages skipped:', e.message);
+  }
+  if (process.env.ORDERS_FROM_COMMENTS === 'on') {
+    const c = await createOrdersFromComments(pageId, opts);
+    result = { ...result, created: result.created + c.created, orders: result.orders + c.orders, leads: result.leads + c.leads };
+  }
+  return result;
+}
+
 // ---- reading and changing orders ------------------------------------------------------------------------
 async function views(pageId, orderRows) {
   if (!orderRows.length) return [];
-  const commentIds = orderRows.map((o) => o.comment_id);
+  const commentIds = orderRows.map((o) => o.comment_id).filter(Boolean); // chat orders have no comment
   const comments = new Map();
   const replies = new Map();
   for (const ids of chunks(commentIds, 100)) {
@@ -215,6 +334,7 @@ async function views(pageId, orderRows) {
     for (const p of data ?? []) products.set(p.id, p);
   }
   return orderRows.map((o) => {
+    if (o.source === 'message') return chatView(o, products);
     const c = comments.get(o.comment_id);
     const product = products.get(productOf.get(c?.post_id) ?? o.product_id) ?? null;
     const postName = product?.name ?? (c?.posts?.message ? clip(c.posts.message.split('\n')[0], 60) : 'a photo post');
@@ -228,6 +348,21 @@ async function views(pageId, orderRows) {
       comment_id: o.comment_id, comment_url: commentUrl(c?.post_id, o.comment_id), commented_at: c?.created_time ?? o.created_at, created_at: o.created_at,
     };
   });
+}
+
+// A card for a Messenger chat: what the customer wrote (their lines, newest last), the whole chat for context, no comment link.
+function chatView(o, products) {
+  const product = o.product_id ? products.get(o.product_id) ?? null : null;
+  const chat = Array.isArray(o.conversation) ? o.conversation : [];
+  const quantity = (o.missing_fields ?? []).includes('quantity') ? null : o.quantity;
+  const fields = { size: o.size, quantity, phone: o.phone, address: o.address };
+  return {
+    id: o.id, kind: o.kind === 'order' ? 'order' : 'lead', status: FROM_DB[o.status] ?? 'to_review', source: 'message',
+    customer: 'Customer on Messenger', post_name: product?.name ?? 'Messenger chat', product: product && { id: product.id, name: product.name, type: product.product_type },
+    size: o.size, color: o.color, quantity, phone: o.phone, address: o.address, notes: o.notes,
+    missing: missingFor(fields, product?.product_type), comment: customerText(chat), conversation: chat, followups: [],
+    comment_id: null, comment_url: null, commented_at: chat.at(-1)?.at ?? o.created_at, created_at: o.created_at,
+  };
 }
 
 export async function listOrders(pageId, status) {
@@ -296,7 +431,9 @@ export async function setOrderStatus(pageId, id, status) {
 export async function convertToOrder(pageId, id) {
   const { view } = await getOne(pageId, id);
   if (view.kind === 'order') return view;
-  const { error } = await db.from('comments').update({ intent: 'order_intent' }).eq('id', view.comment_id);
+  const { error } = view.source === 'message'
+    ? await db.from('orders').update({ kind: 'order' }).eq('id', id).eq('page_id', pageId)
+    : await db.from('comments').update({ intent: 'order_intent' }).eq('id', view.comment_id);
   if (error) throw error;
   return (await getOne(pageId, id)).view;
 }
@@ -319,8 +456,8 @@ export async function suggestReply(pageId, id) {
   let problems = [];
   for (let attempt = 1; attempt <= 3; attempt++) {
     const { data } = await completeJSON('order_reply', {
-      messages: [{ role: 'user', content: `You write a short Facebook reply from a small seller in Bangladesh to a customer's comment about buying${view.product ? ` "${view.product.name}"` : ''}.
-THE CUSTOMER WROTE: ${JSON.stringify(clip(view.comment, 400))}
+      messages: [{ role: 'user', content: `You write a short Messenger reply from a small seller in Bangladesh to a customer who wants to buy${view.product ? ` "${view.product.name}"` : ''}.
+THE CUSTOMER WROTE: ${JSON.stringify(clip(view.comment, 600))}
 THEY HAVE NOT YET TOLD YOU: ${asks.map((a) => FIELD_NAME[a]).join(', ')}.
 RULES (checked by code):
 - ${LANGUAGE[language]}

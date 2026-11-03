@@ -15,7 +15,8 @@
     "demo:analyze": "node scripts/demo-analyze.js",
     "demo:sample-stock": "node scripts/make-sample-stock.js",
     "demo:scan": "node scripts/demo-scan-snapshot.js",
-    "demo:save-analysis": "node scripts/demo-save-analysis.js"
+    "demo:save-analysis": "node scripts/demo-save-analysis.js",
+    "demo:messages": "node scripts/demo-messages.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",

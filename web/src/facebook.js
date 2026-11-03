@@ -1,7 +1,7 @@
 const APP_ID = import.meta.env.VITE_FB_APP_ID
 const VERSION = 'v26.0'
 export const SCOPES =
-  'pages_show_list,pages_read_engagement,pages_read_user_content,read_insights,pages_manage_posts'
+  'pages_show_list,pages_read_engagement,pages_read_user_content,read_insights,pages_manage_posts,pages_messaging'
 
 let sdk
 export function loadFacebookSdk() {

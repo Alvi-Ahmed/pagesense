@@ -107,16 +107,22 @@ function knownFacts(group) {
 
 // ---- grounding context ---------------------------------------------------------------------
 const exampleCache = new Map(); // pageId -> { at, examples, names }
-const EXAMPLE_TTL_MS = 3600_000;
+const EXAMPLE_TTL_MS = 6 * 3600_000;
+const exampleLoading = new Map(); // pageId -> promise: visitors arriving together share one name scan
 
-async function styleExamples(pageId) {
+export async function styleExamples(pageId) {
   const hit = exampleCache.get(pageId);
   if (hit && Date.now() - hit.at < EXAMPLE_TTL_MS) return hit;
-  const raw = await rawExamples(pageId);
-  const { names, texts } = await removeNames(raw.map(stripAliases));
-  const value = { at: Date.now(), examples: texts.filter((t) => t.length >= 30), names };
-  exampleCache.set(pageId, value);
-  return value;
+  if (!exampleLoading.has(pageId)) {
+    exampleLoading.set(pageId, (async () => {
+      const raw = await rawExamples(pageId);
+      const { names, texts } = await removeNames(raw.map(stripAliases)); // a model call: slow on a cold start
+      const value = { at: Date.now(), examples: texts.filter((t) => t.length >= 30), names };
+      exampleCache.set(pageId, value);
+      return value;
+    })().finally(() => exampleLoading.delete(pageId)));
+  }
+  return exampleLoading.get(pageId);
 }
 
 async function rawExamples(pageId) {
@@ -160,8 +166,9 @@ const BAIT = [
   /(?:কমেন্ট|লাইক|শেয়ার|ট্যাগ)\s*(?:করলে|করুন|করে|দিলে|দিন)/,
 ];
 // Urgency: only real stock may be used. Any of these needs a stock count that is low (or the owner having written it).
-const URGENCY = /\bonly\s+(?:\d+|a few|few)\s+(?:pieces?|pcs|units?|pairs?|items?|sets?)?\s*(?:left|remaining)\b|\b(?:few|last)\s+(?:pieces?|pairs?|items?|left)\b|\b(?:selling|going) fast\b|\bwhile (?:stock|stocks|supplies) lasts?\b|\bhurry\b|\b(?:almost|nearly) (?:gone|sold out)\b|\bstock (?:is )?(?:running )?(?:low|ending)\b|\b(?:ends?|ending) (?:today|tonight|soon|tomorrow)\b|\blast chance\b|\b(?:matro|shudhu|sudhu)\s*\d+\s*(?:ta|pis|piece|pcs)?\s*(?:ache|achhe|baki|ase)\b|\bstock (?:sesh|shesh|kom)\b|\bshesh hoye\b|আর মাত্র|মাত্র \d+|শেষ হয়ে|স্টক শেষ|শেষ সুযোগ/giu;
-const COUNT_CLAIM = /\b(?:only|matro|shudhu|sudhu)\s*(\d+)|(?:আর )?মাত্র\s*(\d+)/giu;
+const URGENCY = /\bonly\s+(?:\d+|a few|few)\s+(?:pieces?|pcs|units?|pairs?|items?|sets?)?\s*(?:left|remaining)\b|\b(?:few|last)\s+(?:pieces?|pairs?|items?|left)\b|\b(?:selling|going) fast\b|\bwhile (?:stock|stocks|supplies) lasts?\b|\bhurry\b|\b(?:almost|nearly) (?:gone|sold out)\b|\bstock (?:is )?(?:running )?(?:low|ending)\b|\b(?:ends?|ending) (?:today|tonight|soon|tomorrow)\b|\blast chance\b|\b(?:matro|shudhu|sudhu)\s*\d+\s*(?:ta|ti|pis|piece|pcs)\b|\bstock (?:sesh|shesh|kom)\b|\bshesh hoye\b|মাত্র\s*\d+\s*(?:টি|টা|পিস|টাই)(?![ঀ-৿])|শেষ হয়ে|স্টক শেষ|শেষ সুযোগ/giu;
+// "only 3 left" style counts. A price ("matro Tk 1450", "মাত্র ১৪৫০ টাকা") is not a count: a count is followed by a unit.
+const COUNT_CLAIM = /\b(?:only|matro|shudhu|sudhu)\s*(\d+)\s*(?:pieces?|pcs|pis|ta|ti|units?|pairs?|items?|sets?|left|remaining|ache|achhe|baki|ase)\b|মাত্র\s*(\d+)\s*(?:টি|টা|পিস|টাই)(?![ঀ-৿])/giu;
 
 export function checkCaption(caption, { allowedNumbers, knownText, priceRequired, language, forbiddenNames = [], requiredPrice = null, requiredPlaceholders = [], noOffer = false, requiredNumbers = [], stockKnown = false, stockLeft = null, link = null }) {
   const problems = [];
@@ -228,16 +235,17 @@ export function checkCaption(caption, { allowedNumbers, knownText, priceRequired
     problems.push('stock is not known: write [STOCK] instead of claiming it is in stock');
   }
   for (const n of requiredNumbers) {
-    if (!numbersIn(withoutPlaceholders).has(n)) problems.push(`the owner's offer includes ${n}: mention the offer exactly as given`);
+    if (!numbersIn(withoutPlaceholders).has(n)) problems.push(`the owner's offer includes ${n}: mention the offer exactly as given, with that number written as digits (not words)`);
   }
   if (BAIT.some((re) => re.test(text))) problems.push('no engagement bait: do not ask people to comment, like, share or tag to get a reply, the price or a reward');
-  for (const m of new Set(withoutPlaceholders.match(URGENCY) || [])) {
+  const asciiText = toAscii(withoutPlaceholders); // Bangla digits count too
+  for (const m of new Set(asciiText.match(URGENCY) || [])) {
     if (stockLeft === null && !knownText.toLowerCase().includes(m.toLowerCase())) {
       problems.push(`"${m}" is an urgency claim: it needs real low stock in the known facts, so leave it out`);
     }
   }
   if (stockLeft !== null) {
-    for (const m of withoutPlaceholders.matchAll(COUNT_CLAIM)) {
+    for (const m of asciiText.matchAll(COUNT_CLAIM)) {
       const n = m[1] ?? m[2];
       if (n !== String(stockLeft)) problems.push(`the stock is ${stockLeft}, not ${n}: use the exact stock number`);
     }
@@ -419,7 +427,7 @@ function makeAgent({ pageId, kind, facts, analysis, ctx, examples, pbData, langu
   const answer = improving
     ? '{"caption": "...", "changes": [{"change": "...", "reason": "...", "ref": "P1"}]}  (1 to 3 changes)'
     : '{"caption": "...", "why": [{"ref": "P1", "reason": "..."}]}  (2 or 3 reasons that cite different refs)';
-  const prompt = variants ? variantsPrompt({ ctx, facts, languageRule, priceRequired, extra, hint, variants }) : `You write Facebook posts for a small seller in Bangladesh, in the seller's own voice.\n\nTASK: ${improving ? 'Improve the ORIGINAL CAPTION below. Keep every true fact in it, add no new facts.' : 'Write ONE new post for this product.'}
+  const prompt = variants ? variantsPrompt({ ctx, facts, languageRule, priceRequired, extra, hint, variants, examples }) : `You write Facebook posts for a small seller in Bangladesh, in the seller's own voice.\n\nTASK: ${improving ? 'Improve the ORIGINAL CAPTION below. Keep every true fact in it, add no new facts.' : 'Write ONE new post for this product.'}
 ${improving ? `ORIGINAL CAPTION:\n${JSON.stringify(clip(original, 1200))}\n` : ''}
 KNOWN FACTS (nothing else is known; null means unknown):
 ${JSON.stringify(facts)}
@@ -576,10 +584,11 @@ export const ANGLES = {
   answer_first: { label: 'Answer first', how: 'Open with the answer customers ask for most (get_customer_questions says what it is, usually the price), then the product.' },
   showcase: { label: 'Product first', how: 'Lead with what the product is and how it looks, in the seller\'s own style. Calm, no pressure.' },
   offer: { label: 'Offer', how: "Lead with the owner's offer, worded exactly as given in the known facts." },
-  urgency: { label: 'Urgency', how: 'Say that only a few are left, with the exact stock number from the known facts, and nothing else about time or deadlines.' },
+  urgency: { label: 'Urgency', how: 'Say that only a few are left, with the exact stock number from the known facts, and nothing else about time or deadlines. Do not use the words hurry, last chance or selling fast.' },
 };
 const MAX_VARIANTS = 3;
-const VARIANT_TOOL_CALLS = 14; // 2 to learn, up to 3 checks each (a fix and a re-check), a spare
+const VARIANT_TOOL_CALLS = 14; // up to 3 checks each (a fix and a re-check), a few to learn, a spare
+const VARIANT_DEADLINE_MS = 70_000; // after this, variants that already passed are returned instead of waiting for more
 
 // Which angles the facts allow: offer needs a real offer, urgency needs real low stock. Never more than the facts support.
 export const allowedAngles = ({ hasOffer, stockLow }) => ['answer_first', 'showcase', ...(hasOffer ? ['offer'] : []), ...(stockLow ? ['urgency'] : [])];
@@ -607,7 +616,7 @@ export function bestPostingTime(pbData) {
 // Reasons never promise reach, engagement or sales.
 const PROMISE = /\bwill (?:get|bring|boost|double|increase|reach|sell|go)\b|guarantee|\d+\s*%|\b\d+\s*x\b|\bgo viral\b|\bmore (?:likes|reach|sales|orders)\b/i;
 
-function variantsPrompt({ ctx, facts, languageRule, priceRequired, extra, hint, variants }) {
+function variantsPrompt({ ctx, facts, languageRule, priceRequired, extra, hint, variants, examples = [] }) {
   const angles = variants.angles.map((a) => ({ id: a, label: ANGLES[a].label, how: ANGLES[a].how }));
   return `You write Facebook posts for a small seller in Bangladesh, in the seller's own voice.
 
@@ -617,15 +626,22 @@ ${JSON.stringify(angles)}
 ${variants.angles.includes('urgency') ? 'The "urgency" angle is offered because the stock really is low: include one version with it.\n' : ''}PATTERNS YOU MAY USE (each at most once; each has enough posts behind it and did better than the typical post):
 ${JSON.stringify(variants.patterns)}
 
+THE SELLER'S BEST CAPTIONS (style only: tone, length, emoji, layout; not their facts):
+${examples.map((e, i) => `--- example ${i + 1}\n${e}`).join('\n')}
+
+WHAT WORKS ON THIS PAGE (the same patterns as above, with their action tips):
+${JSON.stringify({ actions: ctx.actions, price_question_share_pct: ctx.price_question_share_pct })}
+
 KNOWN FACTS (nothing else is known; null means unknown):
 ${JSON.stringify(facts)}
 ${hint ? `\nOWNER'S BRIEF (a topic from the playbook, not a fact): ${JSON.stringify(clip(hint, 300))}\n` : ''}
 ${rulesBlock(ctx, languageRule, priceRequired, extra)}
+- EVERY version, whatever its angle, must carry all the required facts from the rules above: the price, the owner's offer, the link and the placeholders. The angle changes the opening and the emphasis, not which facts are included.
 - Never ask people to comment, like, share or tag to get a reply, the price or a reward.
 - Never mention time limits or deadlines. Use urgency only if the angle "urgency" is offered above.
 
 HOW TO WORK. You may make at most ${VARIANT_TOOL_CALLS} tool calls in total, check_draft included:
-1. Always call get_playbook_patterns and get_best_captions. Call get_customer_questions, analyze_photo and find_similar_products when they help.
+1. The patterns, the best captions and the facts are all above, so start writing. Call get_customer_questions, analyze_photo or find_similar_products only if one would really change a caption (each call costs time).
 2. Make the versions clearly different: a different opening line, a different order of the facts, a different length and tone. For each version: write the caption, then call check_draft with "caption", "angle" (an angle id), "pattern" (a pattern id such as P1) and "reason" (ONE plain sentence saying what THIS caption does because of that pattern, for example "Opens with the price, since posts that show the price did better on this page"; mention the pattern's value; no numbers except its post count; never promise reach, engagement or sales). If it fails, fix exactly what it lists and check again.
 3. Only when every version has passed check_draft, reply with ONLY this JSON, using the same captions you checked: {"variants": [{"angle": "offer", "pattern": "P1", "reason": "...", "caption": "..."}]}
 Never include a version that has not passed check_draft.`;
@@ -686,7 +702,7 @@ async function runVariants({ agent, fallbackPrompt, language, allowedNumbers, kn
     try {
       const r = await runAgent({
         runId: randomUUID().slice(0, 8), pageId: agent.pageId, prompt: agent.prompt, shape: agent.shape, check: checkOne,
-        multi: { max, maxCalls: VARIANT_TOOL_CALLS, checkSet },
+        multi: { max, maxCalls: VARIANT_TOOL_CALLS, deadlineMs: VARIANT_DEADLINE_MS, checkSet },
         impls: {
           ...agent.impls,
           check_draft: async (args) => {
@@ -773,7 +789,7 @@ export async function generateNewProduct(pageId, { form, analysis, language, hin
     lines: [
       'Facts marked null are unknown. Never guess them.',
       ...(missing.length ? [`These were left empty by the owner, so the caption must contain these exact placeholders: ${missing.map((m) => `[${m}]`).join(', ')}.`] : []),
-      ...(f.offer ? [`The owner's offer is ${JSON.stringify(f.offer)}: mention it exactly as given, including its numbers.`] : ['No offer was given: do not mention any discount, sale or offer.']),
+      ...(f.offer ? [`The owner's offer is ${JSON.stringify(f.offer)}: mention it exactly as given, including its numbers, written as digits (10, or ১০ in Bangla), never as words.`] : ['No offer was given: do not mention any discount, sale or offer.']),
       'Do not claim availability (pre-order, limited stock, sold out, in stock) unless it is in the known facts.',
       ...(f.link ? [`The owner's link is ${f.link} . Put it in the caption exactly once, character for character (no shortening, no extra characters, no markdown), in a natural spot such as "Order here: ${f.link}" (words in the caption's language). Write no other link.`] : []),
     ],
@@ -790,7 +806,7 @@ export async function generateNewProduct(pageId, { form, analysis, language, hin
     const vInfo = { angles, max, patterns: patterns.map(({ id, pattern, value, posts }) => ({ id, pattern, value, posts })) };
     const { variants: made, trace, mode } = await runVariants({
       agent: makeAgent({ pageId, kind: 'new_product', facts, analysis, ctx, examples, pbData, language, priceRequired, extra, hint, variants: vInfo }),
-      fallbackPrompt: (problems) => `${variantsPrompt({ ctx, facts, languageRule, priceRequired, extra, hint, variants: vInfo }).split('HOW TO WORK')[0]}Return JSON: "variants", an array of up to ${max} items, each with "angle", "pattern", "reason" and "caption".\n${problems.length ? `\nYOUR PREVIOUS ANSWER WAS REJECTED. Fix these problems:\n- ${problems.join('\n- ')}\n` : ''}`,
+      fallbackPrompt: (problems) => `${variantsPrompt({ ctx, facts, languageRule, priceRequired, extra, hint, variants: vInfo, examples }).split('HOW TO WORK')[0]}Return JSON: "variants", an array of up to ${max} items, each with "angle", "pattern", "reason" and "caption".\n${problems.length ? `\nYOUR PREVIOUS ANSWER WAS REJECTED. Fix these problems:\n- ${problems.join('\n- ')}\n` : ''}`,
       language, allowedNumbers: numbersIn(factsJson), knownText: factsJson, priceRequired, ctxJson, forbiddenNames: names,
       rules: rulesBase, ctx, angles, patterns, max,
     });

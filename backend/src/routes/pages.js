@@ -12,7 +12,7 @@ import { generateFromCatalog, generateNewProduct, generatePost, improvePost, lis
 import { analyzePhotos, saveNewProduct } from '../newProduct.js';
 import { getProduct, listCatalog, mergeProducts, setStatus, updateProduct } from '../catalog.js';
 import { savedUpdates, suggestUpdates } from '../catalogUpdates.js';
-import { convertToOrder, exportConfirmed, listOrders, setOrderStatus, suggestReply, updateOrder } from '../orders.js';
+import { convertToOrder, createOrdersFromMessages, exportConfirmed, listOrders, setOrderStatus, suggestReply, updateOrder } from '../orders.js';
 import { MAX_BYTES as MAX_SHEET, applyImport, excelBuffer, exportStock, getVariants, previewImport, setLowStockThreshold, setVariants, stockAlerts } from '../stock.js';
 import { cleanPhoto, loadStored, refFor, showableUrl, storePhoto, MAX_BYTES } from '../photos.js';
 import { MAX_LOGO_BYTES, brandView, generateLogos, loadLogo, logoFromDataUrl, logoFromUpload, putFile, saveBrand, saveLogo, signedUrl } from '../brand.js';
@@ -241,6 +241,8 @@ router.get('/:id/catalog/:productId/updates', reply((req) => savedUpdates(req.pa
 // (token in the x-access-token header for reads). The demo is read-only: status changes and edits stay in the
 // visitor's browser. Suggested replies are allowed everywhere and share the generation limit.
 router.get('/:id/orders', requireManager, reply((req) => listOrders(req.params.id, req.query.status)));
+// "Check messages": reads the page's Messenger chats and makes cards for new orders and leads. Read only: nothing is sent.
+router.post('/:id/orders/sync', rejectDemoWrites, requireManager, generationLimit, reply((req) => createOrdersFromMessages(req.params.id)));
 router.get('/:id/orders/export', requireManager, async (req, res) => {
   try {
     const csv = await exportConfirmed(req.params.id);

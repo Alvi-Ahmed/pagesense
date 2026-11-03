@@ -118,6 +118,22 @@ Status: DONE / PARTIAL / MISSING. Update this file after each item.
    Demo: photos go to the server only as base64 to be analysed, are never stored, drafts stay in the tab.
    db/005_new_products.sql adds stock, offer, photo_paths, analysis to products and product_id to post_drafts;
    until it is run, those details are kept in the draft's `why` json.
+7b. DONE: Orders come from Messenger chats, not comments (correction to item 7). Customers order in Messenger, so cards are
+    now made from chats: src/messages.js reads the page's conversations (Graph API, platform=messenger, newest 150, 30
+    messages each; needs the pages_messaging permission, now in the login scopes, so the owner logs in again; in
+    Live mode Meta also requires App Review for it). Muse Spark judges each chat (order / lead / none; a product from the
+    catalog list, copied exactly or null) and every detail is checked against the CUSTOMER's own lines in code (size,
+    color, quantity, address must be literally written; phone by pattern; the phone is taken out of the address; Bangla
+    digits and "৩ টা" count). Quantity is still never defaulted. Only chats that are orders or leads are kept (with
+    their messages); other chats are remembered by id and time only (conversation_checks) and read again only when they
+    change. Chat card: "Customer on Messenger", the last lines of the chat, no comment link. "Check messages" button on
+    Orders (POST /orders/sync, read only, nothing is ever sent; real pages only). "Ask for details" now writes a Messenger
+    reply to copy. Comment orders are OFF unless ORDERS_FROM_COMMENTS=on (existing comment cards are kept). Orders stage
+    version 2; it no longer reruns by itself, "Check messages" does. db/011_message_orders.sql (orders.source, kind,
+    conversation_id, conversation; table conversation_checks). Demo: 9 made-up Demo Shop chats (demo/messages.json) go
+    through the same reading (npm run demo:messages): 6 orders and 3 leads with missing details flagged; demo statuses
+    and edits stay in the tab as before. NOT tested against live Facebook chats: the real page's token has no messaging
+    permission yet, the reader reports "log in again and allow access to messages".
 9b. DONE: Caption variants (extends 9 + 16; new product and catalog product, via POST /posts/generate, one generation).
     The same agent run writes up to 3 variants, each with an ANGLE (answer_first, showcase, offer, urgency) and a
     different playbook pattern. Angles come from the facts: offer only with a real offer, urgency only when the stock

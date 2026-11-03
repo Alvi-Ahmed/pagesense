@@ -1,0 +1,11 @@
+[
+  {"id": "demo_m1", "chat": [["customer", "Assalamu alaikum apu, beige slingback heels ta ki pre-order nite parbo?", 52], ["page", "Walaikum assalam! Ji apu, pre-order cholche. Kon size lagbe?", 51.5], ["customer", "Size 38. Ami nibo ekta. Delivery Dhaka te hobe?", 51], ["page", "Ji hobe. Apnar address ar phone number din please.", 50.5], ["customer", "House 12, Road 4, Dhanmondi, Dhaka. 01700000001", 50]]},
+  {"id": "demo_m2", "chat": [["customer", "hi, I want 2 pieces of the baby pink leopard tote bag", 30], ["page", "Sure! Could you send your phone number and address for delivery?", 29]]},
+  {"id": "demo_m3", "chat": [["customer", "Black platform clogs ta nibo, size 39", 20], ["page", "Dhonnobad! Phone number ta din?", 19.5], ["customer", "01700000003", 19]]},
+  {"id": "demo_m4", "chat": [["customer", "pearl sandals er dam koto?", 40], ["page", "Apu inbox e dam bole dichi, kon size lagbe?", 39], ["customer", "ok pore janabo", 38]]},
+  {"id": "demo_m5", "chat": [["customer", "আপু ক্রিম পিংক ফ্লোরাল স্কার্ফটা ৩ টা নেব", 12], ["page", "জি আপু! ঠিকানা আর ফোন নাম্বার দিন", 11.5], ["customer", "Flat 5B, Green Road, Mirpur 10, Dhaka. ০১৭০০০০০০০৫", 11]]},
+  {"id": "demo_m6", "chat": [["customer", "canvas sneakers e size 41 ache?", 8], ["page", "Checking apu, ektu wait korun", 7.5]]},
+  {"id": "demo_m7", "chat": [["customer", "Hello, I'll take the embroidered denim skirt in size M, one piece. My number is 01700000007", 5], ["page", "Thank you! What is your delivery address?", 4.5]]},
+  {"id": "demo_m8", "chat": [["customer", "ankle boots delivery charge koto Chittagong e?", 26], ["page", "Chittagong e 120 taka apu", 25]]},
+  {"id": "demo_m9", "chat": [["customer", "cow print pajama set ta chai, L size, green", 3], ["page", "Sure apu! Address ar phone din", 2.5], ["customer", "Road 2, Sector 7, Uttara, Dhaka. 01700000009. ekta lagbe", 2]]}
+]

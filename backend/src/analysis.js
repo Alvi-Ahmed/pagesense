@@ -23,10 +23,10 @@ export const STAGES = [
     hasNewWork: hasUnclassifiedSince,
   },
   {
-    // order and lead cards from the comments just classified; a comment that already has a card is never touched
-    name: 'orders', version: 1,
+    // order and lead cards from the Messenger chats (chats read before are skipped until they change); version 2 = from chats
+    name: 'orders', version: 2,
     run: (pageId, p) => createOrders(pageId, p),
-    hasNewWork: (pageId) => hasNewOrderComments(pageId),
+    hasNewWork: (pageId) => (process.env.ORDERS_FROM_COMMENTS === 'on' ? hasNewOrderComments(pageId) : false), // new chats: the Orders screen's "Check messages"
   },
   {
     name: 'playbook', version: 1,

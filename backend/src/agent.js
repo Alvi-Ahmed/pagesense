@@ -48,6 +48,7 @@ const stop = (message, trace, toolCalls, plain) => Object.assign(new Error(messa
 export async function runAgent({ runId, pageId, prompt, impls, check, shape, multi = null }) {
   const maxCalls = multi?.maxCalls ?? MAX_TOOL_CALLS;
   const maxTurns = maxCalls + EXTRA_TURNS;
+  const startedAt = Date.now();
   const messages = [{ role: 'user', content: prompt }];
   const trace = [];
   let calls = 0;
@@ -58,6 +59,16 @@ export async function runAgent({ runId, pageId, prompt, impls, check, shape, mul
   const norm = (t) => String(t ?? '').replace(/\s+/g, ' ').trim();
 
   for (let turn = 1; turn <= maxTurns; turn++) {
+    // out of time (Bangla and Banglish take longest): hand back the variants that already passed rather than make the owner wait
+    if (multi?.deadlineMs && Date.now() - startedAt > multi.deadlineMs && passedAll.size) {
+      const kept = [];
+      for (const v of passedAll.values()) if (!check(v.caption, v).length && !multi.checkSet([...kept, v]).length) kept.push(v);
+      if (kept.length) {
+        trace.push({ n: calls + 1, tool: 'finish', ok: true, text: `Stopped early to keep it quick: ${kept.length} checked ${kept.length === 1 ? 'version is' : 'versions are'} ready.`, ms: 0 });
+        log('deadline', { runId, pageId, tool_calls: calls, turns: turn, variants: kept.length });
+        return { data: { variants: kept }, variants: kept, trace, toolCalls: calls };
+      }
+    }
     const started = Date.now();
     const res = await chatWithTools({ messages, tools: TOOLS });
     const msg = res.choices[0].message;
@@ -84,7 +95,7 @@ export async function runAgent({ runId, pageId, prompt, impls, check, shape, mul
           if (name === 'check_draft') {
             const caption = String(args.caption ?? '');
             passed = result.pass ? { caption: norm(caption), data: { caption, why: args.why, changes: args.changes } } : null;
-            if (multi && result.pass) passedAll.set(norm(caption), { angle: args.angle, pattern: args.pattern, reason: args.reason });
+            if (multi && result.pass) passedAll.set(norm(caption), { caption: caption.trim(), angle: args.angle, pattern: args.pattern, reason: args.reason });
             if (!result.pass) lastCheckFailed = true;
           }
         } catch (e) {

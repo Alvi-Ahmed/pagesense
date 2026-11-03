@@ -4,6 +4,8 @@ import cors from 'cors';
 import authRoutes from './routes/auth.js';
 import pageRoutes from './routes/pages.js';
 import { failInterruptedJobs, resumeAnalyses } from './analysis.js';
+import { styleExamples } from './generate.js';
+import { DEMO_PAGE_ID } from './demo.js';
 
 const app = express();
 app.set('trust proxy', 1); // Render sits in front: req.ip is then the visitor, which the rate limit relies on
@@ -26,4 +28,8 @@ app.get('/health', (_req, res) => {
 failInterruptedJobs().then(resumeAnalyses);
 
 const port = process.env.PORT || 4000;
-app.listen(port, () => console.log(`PageSense backend running on :${port}`));
+app.listen(port, () => {
+  console.log(`PageSense backend running on :${port}`);
+  // the first post of the demo would otherwise wait for a name scan of the page's best captions
+  styleExamples(DEMO_PAGE_ID).catch((e) => console.error('could not warm the demo style examples:', e.message));
+});
