@@ -8,7 +8,7 @@ import { MAX_TOOL_CALLS, runAgent } from './agent.js';
 import { randomUUID } from 'node:crypto';
 import { numbersIn, toAscii } from './textutil.js';
 import { findPersonalNames } from './names.js';
-import { showableUrl } from './photos.js';
+import { isStored, showableUrl } from './photos.js';
 import { signedUrl } from './brand.js';
 
 export const LANGUAGES = ['bangla', 'english', 'banglish'];
@@ -575,7 +575,7 @@ export async function generatePost(pageId, { productKey, description, language, 
     why: data.why.map((w) => ({ ref: w.ref, reason: w.reason, pattern: ctx.patterns.find((p) => p.id === w.ref) || null, action: ctx.actions.find((a) => a.id === w.ref)?.text || null })),
     patterns_used: usedPatterns(ctx, data.why.map((w) => w.ref)),
     placeholders: [...new Set([...caption.matchAll(/\[([^\]]+)\]/g)].map((m) => m[1]))],
-    photo_url: product?.photo_url ?? null, source_post_id: product?.post_id ?? null,
+    photo_url: await showableUrl(product?.photo_url ?? null), photo_store: isStored(product?.photo_url) ? product.photo_url : null, source_post_id: product?.post_id ?? null,
   };
 }
 
@@ -913,7 +913,7 @@ export async function improvePost(pageId, { postId, caption, language }) {
     changes: data.changes.map((c) => ({ change: c.change, reason: c.reason, ref: c.ref, pattern: ctx.patterns.find((p) => p.id === c.ref) || null })),
     patterns_used: usedPatterns(ctx, data.changes.map((c) => c.ref)),
     placeholders: [...new Set([...improved.matchAll(/\[([^\]]+)\]/g)].map((m) => m[1]))],
-    photo_url: post?.photo_url ?? null, source_post_id: post?.id ?? null,
+    photo_url: await showableUrl(post?.photo_url ?? null), photo_store: isStored(post?.photo_url) ? post.photo_url : null, source_post_id: post?.id ?? null,
   };
 }
 

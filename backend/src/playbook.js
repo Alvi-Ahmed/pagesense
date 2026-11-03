@@ -1,5 +1,6 @@
 import { db } from './db.js';
 import { completeJSON } from './ai.js';
+import { showableUrl } from './photos.js';
 
 const MIN_POSTS = 3; // a group smaller than this is noise, not a pattern
 const BUYING = ['order_intent', 'price_question', 'size_or_color_request', 'stock_or_restock',
@@ -322,6 +323,20 @@ export async function latestPlaybook(pageId) {
     .eq('page_id', pageId).order('created_at', { ascending: false }).limit(1).maybeSingle();
   if (error) throw error;
   return data ? { status: 'ready', ...data } : { status: 'none' };
+}
+
+// The playbook for the browser: its post photos looked up by post id so they are fresh signed links (the stored copy
+// may hold an expired Facebook link or a ref).
+export async function withPhotos(pb) {
+  if (pb?.status !== 'ready' || !pb.data) return pb;
+  const lists = ['top_posts', 'weakest_posts'].filter((k) => pb.data[k]?.length);
+  const ids = [...new Set(lists.flatMap((k) => pb.data[k].map((p) => p.id)))];
+  if (!ids.length) return pb;
+  const { data } = await db.from('posts').select('id, photo_url').in('id', ids);
+  const urls = new Map(await Promise.all((data ?? []).map(async (r) => [r.id, await showableUrl(r.photo_url)])));
+  const data2 = { ...pb.data };
+  for (const k of lists) data2[k] = pb.data[k].map((p) => ({ ...p, photo_url: urls.get(p.id) ?? p.photo_url }));
+  return { ...pb, data: data2 };
 }
 
 // The owner says whether a post was boosted; boosted posts are left out of every pattern.

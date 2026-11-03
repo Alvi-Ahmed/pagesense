@@ -1,4 +1,5 @@
 import { db } from './db.js';
+import { photoBytes } from './photos.js';
 import sharp from 'sharp';
 import { clip, completeJSON } from './ai.js';
 
@@ -50,9 +51,7 @@ export const getTagStatus = (pageId) => job.get(pageId) || { status: 'idle' };
 // Meta's API can't fetch Facebook CDN urls ("URL is not fetchable"), so we download the photo
 // ourselves and send it inline, shrunk: tagging doesn't need full resolution.
 async function photoDataUrl(url) {
-  const res = await fetch(url, { signal: AbortSignal.timeout(20_000) });
-  if (!res.ok) throw new Error(`photo download failed: HTTP ${res.status}`);
-  const jpeg = await sharp(Buffer.from(await res.arrayBuffer()))
+  const jpeg = await sharp(await photoBytes(url))
     .rotate().resize({ width: 768, height: 768, fit: 'inside', withoutEnlargement: true })
     .jpeg({ quality: 75 }).toBuffer();
   return `data:image/jpeg;base64,${jpeg.toString('base64')}`;

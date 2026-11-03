@@ -134,6 +134,14 @@ Status: DONE / PARTIAL / MISSING. Update this file after each item.
     through the same reading (npm run demo:messages): 6 orders and 3 leads with missing details flagged; demo statuses
     and edits stay in the tab as before. NOT tested against live Facebook chats: the real page's token has no messaging
     permission yet, the reader reports "log in again and allow access to messages".
+7c. DONE: Post photos are kept in our own storage. Facebook picture links (full_picture) are signed and expire within a
+    day, so product pictures only showed on a browser that had cached them. Sync now copies each post photo (1080px JPEG)
+    into the private product-photos bucket (`<page>/posts/<post>.jpg`) and posts.photo_url holds the storage ref; photos
+    already stored are not fetched again, and one that cannot be copied keeps its Facebook link. Tagging, branding,
+    catalog, drafts, catalog updates and the playbook's top/weakest posts all read through photoBytes / showableUrl
+    (fresh signed links). Existing real pages get stored copies on their next sync. Demo: `npm run demo:photos` matches
+    each demo post to the real post it was exported from (by creation time), reads a fresh link with that page's token
+    and stores the copy under `demo/posts/`; snapshot.json now holds the refs (150 of 150 copied).
 9b. DONE: Caption variants (extends 9 + 16; new product and catalog product, via POST /posts/generate, one generation).
     The same agent run writes up to 3 variants, each with an ANGLE (answer_first, showcase, offer, urgency) and a
     different playbook pattern. Angles come from the facts: offer only with a real offer, urgency only when the stock

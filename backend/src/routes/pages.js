@@ -5,7 +5,7 @@ import { startTagging, getTagStatus } from '../tag.js';
 import { DEMO_PAGE_ID } from '../demo.js';
 import { db } from '../db.js';
 import { startAnalysis, latestAnalysis } from '../analysis.js';
-import { angleInsight, latestPlaybook, previewPlaybook, setBoosted } from '../playbook.js';
+import { angleInsight, latestPlaybook, previewPlaybook, setBoosted, withPhotos } from '../playbook.js';
 import { needsReply } from '../replies.js';
 import { hasAuthorColumns, hasColumns } from '../schema.js';
 import { generateFromCatalog, generateNewProduct, generatePost, improvePost, listDrafts, listProducts, saveDraft, updateDraft } from '../generate.js';
@@ -14,7 +14,7 @@ import { getProduct, listCatalog, mergeProducts, setStatus, updateProduct } from
 import { savedUpdates, suggestUpdates } from '../catalogUpdates.js';
 import { convertToOrder, createOrdersFromMessages, exportConfirmed, listOrders, setOrderStatus, suggestReply, updateOrder } from '../orders.js';
 import { MAX_BYTES as MAX_SHEET, applyImport, excelBuffer, exportStock, getVariants, previewImport, setLowStockThreshold, setVariants, stockAlerts } from '../stock.js';
-import { cleanPhoto, loadStored, refFor, showableUrl, storePhoto, MAX_BYTES } from '../photos.js';
+import { cleanPhoto, loadStored, photoBytes, refFor, showableUrl, storePhoto, MAX_BYTES } from '../photos.js';
 import { MAX_LOGO_BYTES, brandView, generateLogos, loadLogo, logoFromDataUrl, logoFromUpload, putFile, saveBrand, saveLogo, signedUrl } from '../brand.js';
 import { detectProduct, productPhrase, renderBranded } from '../branding.js';
 import { rateLimit } from '../rateLimit.js';
@@ -84,7 +84,7 @@ router.get('/:id/analysis', async (req, res) => {
 // Cached playbook from the last analysis run: { status: 'none' } until one has finished.
 router.get('/:id/playbook', async (req, res) => {
   try {
-    const pb = await latestPlaybook(req.params.id);
+    const pb = await withPhotos(await latestPlaybook(req.params.id));
     res.json(pb.status === 'ready' && req.params.id !== DEMO_PAGE_ID ? { ...pb, angles: await angleInsight(req.params.id) } : pb);
   } catch (err) {
     console.error(err.message);
@@ -96,7 +96,7 @@ router.get('/:id/playbook', async (req, res) => {
 router.post('/:id/posts/:postId/boosted', rejectDemoWrites, requireManager, async (req, res) => {
   try {
     if (typeof req.body.boosted !== 'boolean') return res.status(400).json({ error: 'boosted must be true or false' });
-    res.json(await setBoosted(req.params.id, req.params.postId, req.body.boosted));
+    res.json(await withPhotos(await setBoosted(req.params.id, req.params.postId, req.body.boosted)));
   } catch (err) {
     console.error(err.message);
     res.status(err.status || 500).json({ error: err.message });
@@ -108,7 +108,7 @@ router.post('/:id/posts/:postId/boosted', rejectDemoWrites, requireManager, asyn
 router.post('/:id/playbook/preview', async (req, res) => {
   try {
     if (req.params.id !== DEMO_PAGE_ID) return res.status(400).json({ error: 'Preview is only for the demo page' });
-    res.json(await previewPlaybook(req.params.id, req.body.boosted));
+    res.json(await withPhotos(await previewPlaybook(req.params.id, req.body.boosted)));
   } catch (err) {
     console.error(err.message);
     res.status(err.status || 500).json({ error: err.message });
@@ -310,9 +310,9 @@ async function sourcePhoto(pageId, source = {}) {
   if (source.post_id) {
     const { data } = await db.from('posts').select('photo_url').eq('id', source.post_id).eq('page_id', pageId).maybeSingle();
     if (!data?.photo_url) throw Object.assign(new Error('That post has no photo.'), { status: 404 });
-    const res = await fetch(data.photo_url, { signal: AbortSignal.timeout(20_000) });
-    if (!res.ok) throw Object.assign(new Error('The post photo could not be loaded.'), { status: 502 });
-    return (await cleanPhoto(Buffer.from(await res.arrayBuffer()))).full;
+    let bytes;
+    try { bytes = await photoBytes(data.photo_url); } catch { throw Object.assign(new Error('The post photo could not be loaded.'), { status: 502 }); }
+    return (await cleanPhoto(bytes)).full;
   }
   throw Object.assign(new Error('Choose a photo to brand.'), { status: 400 });
 }

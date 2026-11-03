@@ -57,6 +57,53 @@ export async function storePhoto(pageId, buffer) {
   return { id, path };
 }
 
+// Facebook's picture links are signed and expire within a day, so every post photo is copied into our own bucket at
+// sync time and posts.photo_url holds the storage ref. A photo that cannot be copied keeps its Facebook link.
+const POST_PX = 1080;
+const ARCHIVE_CONCURRENCY = 6;
+
+// The bytes behind a stored ref or a plain URL.
+export async function photoBytes(url) {
+  if (isStored(url)) {
+    const { data, error } = await db.storage.from(BUCKET).download(pathOf(url));
+    if (error || !data) throw new Error(`stored photo not found: ${error?.message ?? 'empty'}`);
+    return Buffer.from(await data.arrayBuffer());
+  }
+  const res = await fetch(url, { signal: AbortSignal.timeout(20_000) });
+  if (!res.ok) throw new Error(`photo download failed: HTTP ${res.status}`);
+  return Buffer.from(await res.arrayBuffer());
+}
+
+// Copy one post photo into the bucket; returns its storage ref, or null when it could not be fetched.
+export async function archivePostPhoto(pageId, postId, url) {
+  try {
+    await ensureBucket();
+    const jpeg = await sharp(await photoBytes(url), { limitInputPixels: 100e6 }).rotate()
+      .resize({ width: POST_PX, height: POST_PX, fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 82 }).toBuffer();
+    const path = `${pageId}/posts/${postId}.jpg`;
+    const { error } = await db.storage.from(BUCKET).upload(path, jpeg, { contentType: 'image/jpeg', upsert: true });
+    if (error) throw error;
+    return refFor(path);
+  } catch (e) {
+    console.error('could not store post photo', postId, e.message);
+    return null;
+  }
+}
+
+// Post rows about to be saved: photos already stored stay as they are, the rest are copied in.
+export async function archiveRows(pageId, rows) {
+  const ids = rows.filter((r) => r.photo_url).map((r) => r.id);
+  if (!ids.length) return rows;
+  const { data } = await db.from('posts').select('id, photo_url').in('id', ids);
+  const kept = new Map((data ?? []).filter((r) => isStored(r.photo_url)).map((r) => [r.id, r.photo_url]));
+  const todo = rows.filter((r) => r.photo_url && !kept.has(r.id));
+  for (const r of rows) if (kept.has(r.id)) r.photo_url = kept.get(r.id);
+  await Promise.all(Array.from({ length: ARCHIVE_CONCURRENCY }, async () => {
+    for (let r; (r = todo.shift());) r.photo_url = (await archivePostPhoto(pageId, r.id, r.photo_url)) ?? r.photo_url;
+  }));
+  return rows;
+}
+
 // A stored ref (storage://...) or plain URL into a link the browser can show.
 export async function showableUrl(url) {
   if (!isStored(url)) return url;

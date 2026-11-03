@@ -3,6 +3,7 @@ import { graph, paginate } from './facebook.js';
 import { startAnalysis } from './analysis.js';
 import { DEMO_PAGE_ID } from './demo.js';
 import { hasAuthorColumns } from './schema.js';
+import { archiveRows } from './photos.js';
 
 // Score weights: shares and comments say more about buying intent than a reaction.
 export const engagementScore = ({ reactions, comments_count, shares }) =>
@@ -94,7 +95,7 @@ async function run(pageId, token, job) {
     // Graph stops paging once posts get older than `since`; omitted = full history
     ...(job.days && { since: String(Math.floor(Date.now() / 1000) - job.days * 86400) }),
   })) {
-    const rows = batch.map((p) => toPostRow(pageId, p));
+    const rows = await archiveRows(pageId, batch.map((p) => toPostRow(pageId, p)));
     await upsert('posts', rows);
     job.posts += rows.length;
     job.updatedAt = Date.now();

@@ -110,10 +110,10 @@ export async function suggestUpdates(pageId, productId, { kind = 'sold_out', pos
     out.push(...await Promise.all(targets.slice(i, i + CONCURRENCY).map(async (post) => {
       try {
         const r = await suggestOne({ kind, post, product, similar: similarView });
-        return { post_id: post.id, photo_url: post.photo_url, original_caption: r.original, caption: r.caption, problems: r.problems ?? null, similar: similarView, attempts: r.attempts };
+        return { post_id: post.id, photo_url: await showableUrl(post.photo_url), original_caption: r.original, caption: r.caption, problems: r.problems ?? null, similar: similarView, attempts: r.attempts };
       } catch (e) {
         console.error('caption update failed:', e.status ?? '', JSON.stringify(e.error ?? e.message));
-        return { post_id: post.id, photo_url: post.photo_url, original_caption: post.caption, caption: null, problems: ['The suggestion could not be written. Try again.'], similar: similarView, attempts: 0 };
+        return { post_id: post.id, photo_url: await showableUrl(post.photo_url), original_caption: post.caption, caption: null, problems: ['The suggestion could not be written. Try again.'], similar: similarView, attempts: 0 };
       }
     })));
   }
